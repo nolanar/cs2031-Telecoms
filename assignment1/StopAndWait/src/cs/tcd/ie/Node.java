@@ -7,7 +7,7 @@ import java.util.concurrent.CountDownLatch;
 
 public abstract class Node {
     static final int PACKETSIZE = 65536;
-
+    
     DatagramSocket socket;
     Listener listener;
     CountDownLatch latch;

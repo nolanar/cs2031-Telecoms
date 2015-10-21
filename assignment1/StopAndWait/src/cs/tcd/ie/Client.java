@@ -61,8 +61,7 @@ public class Client extends Node {
         boolean flag = true;
         do {
             String input = terminal.readString("String to send: ");
-            System.err.println(input.length());
-            data= (input).getBytes();
+            data= input.getBytes();
 
             terminal.println("Sending packet...");
             packet= new DatagramPacket(data, data.length, dstAddress);

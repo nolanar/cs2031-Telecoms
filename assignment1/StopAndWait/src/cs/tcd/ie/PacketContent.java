@@ -14,13 +14,13 @@ import java.io.ObjectOutputStream;
  */
 public abstract class PacketContent {
 
-    public static final int ACKPACKET = 10;
-    public static final int NAKPACKET = 11;
-    public static final int FILEINFO = 100;
+    public static final byte ACKPACKET = 10;
+    public static final byte NAKPACKET = 11;
+    public static final byte FILEINFO = 100;
 
+    byte type = 0;
     int packetNumber = -1; // Invalid index by default
     
-    int type = 0;
 
     /**
      * Constructs an object out of a datagram packet.
@@ -40,7 +40,7 @@ public abstract class PacketContent {
             bin= new ByteArrayInputStream(data);
             oin= new ObjectInputStream(bin);
 
-            type= oin.readInt();  // read type from beginning of packet
+            type= oin.readByte();  // read type from beginning of packet
 
             switch(type) {   // depending on type create content object 
             case ACKPACKET:
@@ -89,7 +89,7 @@ public abstract class PacketContent {
             bout= new ByteArrayOutputStream();
             oout= new ObjectOutputStream(bout);
 
-            oout.writeInt(type);         // write type to stream
+            oout.writeByte(type);         // write type to stream
             toObjectOutputStream(oout);  // write content to stream depending on type
 
             oout.flush();
@@ -117,8 +117,17 @@ public abstract class PacketContent {
      * 
      * @return Returns the type of the packet.
      */
-    public int getType() {
+    public byte getType() {
         return type;
+    }
+    
+    /**
+     * Returns the number of the packet
+     * 
+     * @return Returns the number of the packet.
+     */
+    public int getPacketNumber() {
+        return packetNumber;
     }
 
 }

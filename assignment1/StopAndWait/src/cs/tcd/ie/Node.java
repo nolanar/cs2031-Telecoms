@@ -7,12 +7,14 @@ import java.util.concurrent.CountDownLatch;
 
 public abstract class Node {
     static final int PACKETSIZE = 65536;
-
+    
+    PacketBuffer packetBuffer;
+    
     DatagramSocket socket;
     Listener listener;
     CountDownLatch latch;
-
-    Node() {
+    
+     Node() {
         latch= new CountDownLatch(1);
         listener= new Listener();
         listener.setDaemon(true);

@@ -29,13 +29,23 @@ public class CapacityBlockingQueue<E> {
     }
 
     public boolean add(E e) {
-        return content.add(e);
-    }
-
-    public E take() {
         lock.lock();
         try {
-            E e = content.remove();
+            return content.add(e);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Retrieves and removes the head of this queue.
+     * 
+     * @return the head of this queue
+     */
+    public E remove() {
+        lock.lock();
+        try {
+            E e = content.poll();
             if (!isFull()) {
                 notFull.signalAll();
             }
@@ -61,7 +71,12 @@ public class CapacityBlockingQueue<E> {
         }
     }
 
-    public boolean isFull() {
-        return content.size() >= capacity;
+    private boolean isFull() {
+        lock.lock();
+        try {
+            return content.size() >= capacity;
+        } finally {
+            lock.unlock();
+        }
     }
 }

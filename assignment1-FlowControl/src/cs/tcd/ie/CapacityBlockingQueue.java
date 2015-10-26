@@ -45,7 +45,7 @@ public class CapacityBlockingQueue<E> {
     public E remove() {
         lock.lock();
         try {
-            E e = content.poll();
+            E e = content.remove();
             if (!isFull()) {
                 notFull.signalAll();
             }

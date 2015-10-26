@@ -13,14 +13,5 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-/Assign1/nbproject/private/
-/Assign1/build/
-/TestZone/nbproject/private/
-/TestZone/
-/cs2031-Tele-StopAndWait/nbproject/private/
-/assignment1/cs2031-Tele-StopAndWait/nbproject/private/
-/assignment1/StopAndWait/nbproject/private/
-/assignment1/StopAndWait/build/
-/assignment1/StopAndWait/dist/
-/StopAndWait/nbproject/private/
 /assignment1-FlowControl/nbproject/private/
+/assignment1-FlowControl/build/

@@ -23,7 +23,7 @@ public abstract class PacketContent {
     public static final byte FILEINFO = 100;
 
     byte type = 0;
-    int packetNumber = -1; // Invalid index by default
+    int number = -1; // Invalid index by default
     
 
     /**
@@ -94,7 +94,7 @@ public abstract class PacketContent {
             oout= new ObjectOutputStream(bout);
 
             oout.writeByte(type);           // write type to stream
-            oout.writeInt(packetNumber);    // write packetNumber to stream
+            oout.writeInt(number);    // write packetNumber to stream
             toObjectOutputStream(oout);     // write content to stream depending on type
 
             oout.flush();
@@ -132,7 +132,7 @@ public abstract class PacketContent {
      * @return Returns the number of the packet.
      */
     public int getPacketNumber() {
-        return packetNumber;
+        return number;
     }
 
 }

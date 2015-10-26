@@ -53,17 +53,17 @@ public class ScheduledPacket implements Delayed {
         return packet;
     }
     
-    public ScheduledPacket repeat() {
+    public synchronized ScheduledPacket repeat() {
         delay += REPEAT_TIME;
         return this;
     }
 
-    public ScheduledPacket repeat(long time, TimeUnit unit) {
+    public synchronized ScheduledPacket repeat(long time, TimeUnit unit) {
         delay += unit.toNanos(time);
         return this;
     }
     
-    public ScheduledPacket reset() {
+    public synchronized ScheduledPacket reset() {
         delay = System.nanoTime();
         return this;
     }

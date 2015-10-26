@@ -27,24 +27,46 @@ public class PacketBuffer {
     private final Thread scheduleHandler;
     
     private final int sequenceLength;
+    private final int windowLength;
     private int bufferNumber;
+    private int windowStart;
     
-    public PacketBuffer(int windowSize, int sequenceLength) {
+    public PacketBuffer(int windowLength, int sequenceLength) {
+        this.sequenceLength = sequenceLength;
+        this.windowLength = windowLength;
+        bufferNumber = 0;
+        windowStart = 0;
+
         buffer = new LinkedBlockingQueue<>();
-        window = new CapacityBlockingQueue<>(windowSize);
+        window = new CapacityBlockingQueue<>(windowLength);
         schedule = new DelayQueue<>();
         
         feeder = new Thread(new Feeder());
-        scheduleHandler = new Thread(new ScheduleHandler());
-        
-        this.sequenceLength = sequenceLength;
-        bufferNumber = 0;
+        scheduleHandler = new Thread(new ScheduleHandler()); 
     }
     
     public boolean add(PacketContent packet) {
         packet.number = bufferNumber;
         bufferNumber = (bufferNumber + 1) % sequenceLength;
         return buffer.add(packet);
+    }
+    
+    public boolean acknowledge(int number) {
+        boolean result = false;
+        
+        int relative = (number - windowStart + sequenceLength) % sequenceLength;
+        System.err.println("rel: " + relative);
+        if (relative <= windowLength) {
+            for (int i = 0; i < relative; i++) {
+                ScheduledPacket schPacket = window.remove();
+                windowStart = (windowStart + 1) % sequenceLength;
+                schedule.remove(schPacket);
+            }
+        } else {
+            System.err.println("Not in range");
+        }
+        
+        return result;
     }
     
     /**
@@ -69,8 +91,7 @@ public class PacketBuffer {
                     ScheduledPacket schPacket = new ScheduledPacket(packet);
                     window.add(schPacket);
                     schedule.add(schPacket);
-                    //packet rate
-                    rate.await(PACKETRATE, TimeUnit.MILLISECONDS);
+                    rate.await(PACKETRATE, TimeUnit.MILLISECONDS); //packet rate
                 } catch (InterruptedException e) {
                     System.out.println("Terminating Feeder"); //--> DEBUG
                     return;
@@ -114,9 +135,8 @@ public class PacketBuffer {
      * 
      */
     
-    
     void testAction(PacketContent packet) {
-        System.out.println(packet.toString());
+        System.out.print((packet.number == windowStart ? "\n" : "\t") + packet.toString());
     }
     
     public static void main(String[] args) {
@@ -125,11 +145,31 @@ public class PacketBuffer {
         pb.feeder.start();
         pb.scheduleHandler.start();
         
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 100; i++) {
             pb.add(new AckPacketContent("Test"));
         }
         
         Scanner console = new Scanner(System.in);
+        
+        while (true) {
+            String input = console.nextLine();
+            Scanner line = new Scanner(input);
+            if (line.hasNextInt()) {
+                int packet = line.nextInt();
+                pb.acknowledge(packet);
+            } else {
+                String command = line.next();
+                switch (command) {
+                    case "ACK":
+                        int number = line.nextInt();
+                        pb.acknowledge(number);
+                        break;
+                    default :
+                        System.out.println("Command not found");
+                        break;
+                }
+            }
+        }
         
     }
     

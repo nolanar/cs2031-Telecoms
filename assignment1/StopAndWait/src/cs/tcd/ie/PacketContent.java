@@ -1,11 +1,11 @@
 package cs.tcd.ie;
 
+
 import java.net.DatagramPacket;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
 
 /**
  * The class is the basis for packet contents of various types.
@@ -14,6 +14,10 @@ import java.io.ObjectOutputStream;
  */
 public abstract class PacketContent {
 
+    /**
+     * Header content
+     * 
+     */
     public static final byte ACKPACKET = 10;
     public static final byte NAKPACKET = 11;
     public static final byte FILEINFO = 100;
@@ -89,8 +93,9 @@ public abstract class PacketContent {
             bout= new ByteArrayOutputStream();
             oout= new ObjectOutputStream(bout);
 
-            oout.writeByte(type);         // write type to stream
-            toObjectOutputStream(oout);  // write content to stream depending on type
+            oout.writeByte(type);           // write type to stream
+            oout.writeInt(packetNumber);    // write packetNumber to stream
+            toObjectOutputStream(oout);     // write content to stream depending on type
 
             oout.flush();
             data= bout.toByteArray(); // convert content to byte array

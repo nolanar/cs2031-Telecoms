@@ -20,7 +20,7 @@ public class SendBuffer {
     public static final long PACKETRATE = 250;
     
     private final LinkedBlockingQueue<PacketContent> buffer;
-    private final CapacityBlockingQueue<ScheduledPacket> window;
+    private final ArrayBlockingList<ScheduledPacket> window;
     private final DelayQueue<ScheduledPacket> schedule;
 
     private final Thread feeder;
@@ -38,7 +38,7 @@ public class SendBuffer {
         windowStart = 0;
 
         buffer = new LinkedBlockingQueue<>();
-        window = new CapacityBlockingQueue<>(windowLength);
+        window = new ArrayBlockingList<>(windowLength);
         schedule = new DelayQueue<>();
         
         feeder = new Thread(new Feeder());
@@ -54,7 +54,7 @@ public class SendBuffer {
     /**
      * Action to be taken upon the receipt of an ACK
      * 
-     * @param number is the packet number of the received ACK
+     * @param number - the packet number of the received ACK
      * @return true if packet number of ACK is in range, false otherwise
      */
     public boolean ack(int number) {
@@ -75,6 +75,26 @@ public class SendBuffer {
         return result;
     }
     
+    /**
+     * Action to be taken upon the receipt of a NAK
+     * 
+     * @param number - the packet number of the received NAK
+     * @return true if packet number of NAK is in range, false otherwise
+     */
+    public boolean nak(int number) {
+        boolean result;
+        int relative = (number - windowStart + sequenceLength) % sequenceLength;
+        if (relative < windowLength) {
+            ScheduledPacket schPacket = window.get(relative);
+            schedule.remove(schPacket);
+            schedule.add(schPacket.reset());
+            result = true;
+        } else {
+            result = false;
+        }
+        return result;
+    }
+
     /**
      * Feeds packets from buffer to window.
      * 
@@ -106,7 +126,6 @@ public class SendBuffer {
                 }
             }
         }
-
     }
     
     /**
@@ -157,12 +176,13 @@ public class SendBuffer {
         
         Scanner console = new Scanner(System.in);
         
-        while (true) {
+        boolean running = true;
+        while (running) {
             String input = console.nextLine();
             Scanner line = new Scanner(input);
             if (line.hasNextInt()) {
                 int packet = line.nextInt();
-                sb.ack(packet);
+                sb.nak(packet);
             } else {
                 String command = line.next();
                 switch (command) {
@@ -170,13 +190,17 @@ public class SendBuffer {
                         int number = line.nextInt();
                         sb.ack(number);
                         break;
+                    case "quit":
+                        running = false;
+                        break;
                     default :
                         System.out.println("Command not found");
                         break;
                 }
             }
         }
-        
+        sb.feeder.interrupt();
+        sb.scheduleHandler.interrupt();
     }
     
 }

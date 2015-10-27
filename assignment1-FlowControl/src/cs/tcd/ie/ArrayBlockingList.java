@@ -7,7 +7,6 @@ package cs.tcd.ie;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.*;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * A data structure with functionality of both a fixed sized list and a queue.
@@ -33,7 +32,10 @@ public class ArrayBlockingList<E> {
         notFull = lock.newCondition();
         notEmpty = lock.newCondition();
 
-        items = new ArrayList<E>(capacity);
+        items = new ArrayList<>(capacity);
+        for (int i = 0 ; i < capacity; i++) {
+            items.add(null);
+        }
         this.capacity = capacity;
     }
 
@@ -89,15 +91,15 @@ public class ArrayBlockingList<E> {
     public E set(int index, E e) {
         lock.lock();
         try {
-            if (index > 0 || index < capacity - 1) {
+            if (inRange(index)) {
                 throw new IndexOutOfBoundsException();
             }
-            int relative = (index - front + capacity) % capacity;
-            E result = items.get(relative);
-            if (index == back) {
+            int position = position(index);
+            E result = items.get(position);
+            if (position == back) {
                 enqueue(e);
             } else {
-                items.set(relative, e);
+                items.set(position, e);
             }
             return result;
         } finally {
@@ -152,11 +154,11 @@ public class ArrayBlockingList<E> {
     public E get(int index) {
         lock.lock();
         try {
-            if (index > 0 || index < capacity - 1) {
+            if (inRange(index)) {
                 throw new IndexOutOfBoundsException();
             }
-            int relative = (index - front + capacity) % capacity;
-            return items.get(relative);
+            int position = position(index);
+            return items.get(position);
         } finally {
             lock.unlock();
         }
@@ -239,6 +241,24 @@ public class ArrayBlockingList<E> {
         count--;
         notFull.signal();
         return e;
-    }  
+    }
+    
+    /**
+     * Checks if given index is in the range of the list.
+     */
+    private boolean inRange(int index) {
+        return index < 0 || index > capacity - 1;
+    }
+    
+    /**
+     * Returns the position of index in the underlying array.
+     * 
+     * Index specifies the position relative to the front of the queue.
+     * 
+     * Call only when holding lock.
+     */
+    private int position(int index) {
+        return (index - front + capacity) % capacity;
+    };
     
 }

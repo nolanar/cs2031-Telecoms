@@ -1,15 +1,20 @@
 package cs.tcd.ie;
 
 /**
+ * TODO:
+ * - Create a 'Sender' runnable
+ * - Use Executor (Executors.newFixedThreadPool()) to manage threads
+ * - Make classes that implement Runnable into Runnable objects
+ * - Make window/schedule changes atomic (synchronize)
+ * - Investigate callable
+ */
+
+/**
  *
  * @author aran
  */
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.TimeUnit;
 
 //--> testing imports
 import java.util.Scanner;
@@ -23,8 +28,8 @@ public class SendBuffer {
     private final ArrayBlockingList<ScheduledPacket> window;
     private final DelayQueue<ScheduledPacket> schedule;
 
-    private final Thread feeder;
-    private final Thread scheduleHandler;
+    private final Feeder feeder;
+    private final ScheduleHandler scheduleHandler;
     
     private final int sequenceLength;
     private final int windowLength;
@@ -41,8 +46,8 @@ public class SendBuffer {
         window = new ArrayBlockingList<>(windowLength);
         schedule = new DelayQueue<>();
         
-        feeder = new Thread(new Feeder());
-        scheduleHandler = new Thread(new ScheduleHandler()); 
+        feeder = new Feeder();
+        scheduleHandler = new ScheduleHandler(); 
     }
     
     public boolean add(PacketContent packet) {
@@ -62,11 +67,15 @@ public class SendBuffer {
         int relative = (number - windowStart + sequenceLength) % sequenceLength;
         System.err.println("rel: " + relative); //<-- DEBUG
         if (0 < relative && relative < windowLength + 1) {
+            
+            //--> Synchronize on window/schedule
             for (int i = 0; i < relative; i++) {
                 ScheduledPacket schPacket = window.remove();
                 windowStart = (windowStart + 1) % sequenceLength;
                 schedule.remove(schPacket);
             }
+            //--<
+            
             result = true;
         } else {
             System.err.println("Not in range"); //<-- DEBUG
@@ -79,15 +88,30 @@ public class SendBuffer {
      * Action to be taken upon the receipt of a NAK
      * 
      * @param number - the packet number of the received NAK
+     * @param goBackN - if true, resend all packets starting from the one NAK'ed
      * @return true if packet number of NAK is in range, false otherwise
      */
-    public boolean nak(int number) {
+    public boolean nak(int number, boolean goBackN) {
         boolean result;
         int relative = (number - windowStart + sequenceLength) % sequenceLength;
         if (relative < windowLength) {
-            ScheduledPacket schPacket = window.get(relative);
-            schedule.remove(schPacket);
-            schedule.add(schPacket.reset());
+            
+            //--> Synchronize on window/schedule
+            if (goBackN) {
+                // For 'go back n', resend all packets starting from the one NAK'ed
+                for (int i = relative; i < window.size(); i++) {
+                    ScheduledPacket schPacket = window.get(i);
+                    schedule.remove(schPacket);
+                    schedule.add(schPacket.reset());
+                }
+            } else {
+                // For 'selective repeat', resent the packet
+                ScheduledPacket schPacket = window.get(relative);
+                schedule.remove(schPacket);
+                schedule.add(schPacket.reset());
+            }
+            //--<
+            
             result = true;
         } else {
             result = false;
@@ -104,27 +128,35 @@ public class SendBuffer {
      */
     private class Feeder implements Runnable {
 
-        final Lock lock = new ReentrantLock();
-        final Condition rate = lock.newCondition();
+        Thread thread;
         
         @Override
         public void run() {
             while (true) {
-                lock.lock();
                 try {
+                    
+                    //--> Synchronize on window/schedule ???
                     window.awaitNotFull();                // Blocking
                     PacketContent packet = buffer.take(); // Blocking
                     ScheduledPacket schPacket = new ScheduledPacket(packet);
                     window.add(schPacket);
                     schedule.add(schPacket);
-                    rate.await(PACKETRATE, TimeUnit.MILLISECONDS); //packet rate
+                    //--<
+                    
                 } catch (InterruptedException e) {
                     System.out.println("Terminating Feeder"); //--> DEBUG
                     return;
-                } finally {
-                    lock.unlock();
                 }
             }
+        }
+        
+        public void start() {
+            thread = new Thread(this);
+            thread.start();
+        }
+        
+        public void terminate() {
+            thread.interrupt();
         }
     }
     
@@ -136,22 +168,37 @@ public class SendBuffer {
      */
     private class ScheduleHandler implements Runnable {
 
+        private Thread thread;
+        
         @Override
         public void run() {
             while (true) {
                 try {
+                    
+                //--> Synchronize on window/schedule ???
                     // Wait for next packet to expire
                     ScheduledPacket schPacket = schedule.take(); // Blocking
                     // Renew the delay on the packet and feed back into schedule
                     schedule.put(schPacket.repeat());
                     // Action to take with packet
                     testAction(schPacket.getPacketContent()); // TESTING
-                    //send(schPacket); //<--IMPLEMENT
+                    //addToSenderQueue(schPacket); //<--IMPLEMENT
+                //--<
+                    
                 } catch (InterruptedException e) {
                     System.out.println("Terminating ScheduleHandler");
                     return;
                 }
             }            
+        }
+        
+        public void start() {
+            thread = new Thread(this);
+            thread.start();
+        }
+        
+        public void terminate() {
+            thread.interrupt();
         }
     }
     
@@ -182,7 +229,7 @@ public class SendBuffer {
             Scanner line = new Scanner(input);
             if (line.hasNextInt()) {
                 int packet = line.nextInt();
-                sb.nak(packet);
+                sb.nak(packet, false);
             } else {
                 String command = line.next();
                 switch (command) {
@@ -199,8 +246,8 @@ public class SendBuffer {
                 }
             }
         }
-        sb.feeder.interrupt();
-        sb.scheduleHandler.interrupt();
+        sb.feeder.terminate();
+        sb.scheduleHandler.terminate();
     }
     
 }

@@ -181,6 +181,19 @@ public class ArrayBlockingList<E> {
         }
     }
     
+    /**
+     * Returns the number of elements in the queue.
+     *
+     * @return the number of elements in this queue
+     */
+    public int size() {
+        lock.lock();
+        try {
+            return count;
+        } finally {
+            lock.unlock();
+        }        
+    }
     
     /**
      * Returns true if queue is full, false otherwise.

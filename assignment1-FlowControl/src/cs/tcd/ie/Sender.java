@@ -8,7 +8,7 @@ import java.net.SocketAddress;
  */
 public interface Sender {
     
-    public void send(PacketContent packet, SocketAddress address);
+    public void send(PacketContent packet);
     
     public void start();
 }

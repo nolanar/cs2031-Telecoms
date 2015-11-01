@@ -14,23 +14,26 @@ public class ScheduledPacket implements Delayed {
     public static final long REPEAT_TIME = TimeUnit.SECONDS.toNanos(5);
 
     private long delay;
-    private final DatagramPacket packet;
+    private final PacketContent packet;
 
     /**
      * Delay time in nanoseconds.
      * 
+     * @param packet
+     * @param delay
+     * @param unit
      */
-    public ScheduledPacket(DatagramPacket packet, long delay, TimeUnit unit) {
+    public ScheduledPacket(PacketContent packet, long delay, TimeUnit unit) {
         this.delay = unit.toNanos(delay) + System.nanoTime();
         this.packet = packet;
     }
 
-    public ScheduledPacket(DatagramPacket packet) {
+    public ScheduledPacket(PacketContent packet) {
         this.delay = System.nanoTime();
         this.packet = packet;
     }
 
-    private ScheduledPacket(DatagramPacket packet, long delay) {
+    private ScheduledPacket(PacketContent packet, long delay) {
         this.delay = delay;
         this.packet = packet;
     }
@@ -50,7 +53,7 @@ public class ScheduledPacket implements Delayed {
         return unit.convert(delay-System.nanoTime(), TimeUnit.NANOSECONDS);
     }
 
-    public DatagramPacket getPacket() {
+    public PacketContent getPacket() {
         return packet;
     }
     

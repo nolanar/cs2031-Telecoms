@@ -1,6 +1,5 @@
 package cs.tcd.ie;
 
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -12,10 +11,8 @@ import java.util.concurrent.Executors;
  * @author aran
  */
 public class WindowedSender implements Sender {
-    
-    private final Node parent;
-    
-    private final LinkedBlockingQueue<DatagramPacket> windowBuffer;
+
+    private final LinkedBlockingQueue<PacketContent> windowBuffer;
     private final ArrayBlockingList<ScheduledPacket> window;
     private final DelayQueue<ScheduledPacket> schedule;
 
@@ -30,8 +27,10 @@ public class WindowedSender implements Sender {
     private int bufferNumber;
     private int windowStart;
     
-    public WindowedSender(Node parent, int windowLength, int sequenceLength) {
-        this.parent = parent;
+    public WindowedSender(Node parent, SocketAddress dstAddress,
+            int windowLength, int sequenceLength) {
+        
+        sender = new BufferedSender(parent, dstAddress);
                 
         this.sequenceLength = sequenceLength;
         this.windowLength = windowLength;
@@ -42,8 +41,6 @@ public class WindowedSender implements Sender {
         window = new ArrayBlockingList<>(windowLength);
         schedule = new DelayQueue<>();
         
-        sender = new BufferedSender(parent);
-        
         pool = Executors.newFixedThreadPool(THREAD_COUNT);
         started = false;
     }
@@ -51,6 +48,7 @@ public class WindowedSender implements Sender {
     /**
      * Starts the WindowedSender
      */
+    @Override
     public void start() {
         if (!started) {
             started = true;
@@ -72,7 +70,7 @@ public class WindowedSender implements Sender {
         while (true) {
             try {
                 window.awaitNotFull();                // Blocking
-                DatagramPacket packet = windowBuffer.take();  // Blocking
+                PacketContent packet = windowBuffer.take();  // Blocking
                 ScheduledPacket schPacket = new ScheduledPacket(packet);
                 window.add(schPacket);
                 schedule.add(schPacket);
@@ -106,12 +104,10 @@ public class WindowedSender implements Sender {
     }    
     
     @Override
-    public synchronized void send(PacketContent packet, SocketAddress address) {
+    public synchronized void send(PacketContent packet) {
         packet.number = bufferNumber;
-        DatagramPacket dataPacket = packet.toDatagramPacket();
-        dataPacket.setSocketAddress(address);
-        bufferNumber = (bufferNumber + 1) % sequenceLength;
-        windowBuffer.add(dataPacket);
+        bufferNumber = nextNumber(bufferNumber);
+        windowBuffer.add(packet);
     }
     
     /**
@@ -127,7 +123,7 @@ public class WindowedSender implements Sender {
         if (0 < relative && relative < windowLength + 1) {
             for (int i = 0; i < relative; i++) {
                 ScheduledPacket schPacket = window.remove();
-                windowStart = (windowStart + 1) % sequenceLength;
+                windowStart = nextNumber(windowStart);
                 schedule.remove(schPacket);
             }
             result = true;
@@ -168,6 +164,10 @@ public class WindowedSender implements Sender {
             result = false;
         }
         return result;
+    }
+    
+    public int nextNumber(int number) {
+        return (number + 1) % sequenceLength;
     }
  
 }

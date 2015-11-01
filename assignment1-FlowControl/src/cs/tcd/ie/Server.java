@@ -36,7 +36,9 @@ public class Server extends Node {
                 terminal.println("File size: " + ((FileInfoContent)content).getFileSize());
 
                 DatagramPacket response;
-                response= new AckPacketContent("OK - Received this").toDatagramPacket();
+                WindowedReceiver wReceiver = (WindowedReceiver)receiver;
+                int nextPacket = wReceiver.nextNumber(content.number);
+                response= new AckPacketContent(nextPacket, "OK - Received this").toDatagramPacket();
                 response.setSocketAddress(packet.getSocketAddress());
                 socket.send(response);
             }

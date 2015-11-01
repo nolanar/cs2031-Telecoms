@@ -16,8 +16,19 @@ public class AckPacketContent extends PacketContent {
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    AckPacketContent(String info) {
+    AckPacketContent(int number) {
+        this.number = number;
+        type= ACKPACKET;
+        this.info = "";
+    }
 
+    /**
+     * Constructor that takes in information about a file.
+     * @param filename Initial filename.
+     * @param size Size of filename.
+     */
+    AckPacketContent(int number, String info) {
+        this.number = number;
         type= ACKPACKET;
         this.info = info;
     }

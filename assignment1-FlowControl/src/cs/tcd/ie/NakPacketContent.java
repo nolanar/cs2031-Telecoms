@@ -16,8 +16,19 @@ public class NakPacketContent extends PacketContent {
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    NakPacketContent(String info) {
-
+    NakPacketContent(int number) {
+        this.number = number;
+        type= NAKPACKET;
+        this.info = "";
+    }    
+    
+    /**
+     * Constructor that takes in information about a file.
+     * @param filename Initial filename.
+     * @param size Size of filename.
+     */
+    NakPacketContent(int number, String info) {
+        this.number = number;
         type= NAKPACKET;
         this.info = info;
     }

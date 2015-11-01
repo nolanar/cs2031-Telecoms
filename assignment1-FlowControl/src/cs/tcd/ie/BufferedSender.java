@@ -16,20 +16,22 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author aran
  */
 public class BufferedSender implements Sender {
-    
     private final Node parent;
+    private final SocketAddress dstAddress;
 
     private final LinkedBlockingQueue<DatagramPacket> sendBuffer;
     private final ExecutorService executor;
     private boolean started;
     
-    public BufferedSender(Node parent) {
+    public BufferedSender(Node parent, SocketAddress dstAddress) {
         this.parent = parent;
+        this.dstAddress = dstAddress;
         sendBuffer = new LinkedBlockingQueue<>();
         started = false;
         executor = Executors.newSingleThreadExecutor();
     }
     
+    @Override
     public void start() {
         if (!started) {
             started = true;
@@ -42,9 +44,9 @@ public class BufferedSender implements Sender {
     }
 
     @Override
-    public void send(PacketContent packet, SocketAddress address) {
+    public void send(PacketContent packet) {
             DatagramPacket dataPacket = packet.toDatagramPacket();
-            dataPacket.setSocketAddress(address);
+            dataPacket.setSocketAddress(dstAddress);
             sendBuffer.add(dataPacket); 
     }
     

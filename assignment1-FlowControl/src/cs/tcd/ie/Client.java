@@ -36,7 +36,7 @@ public class Client extends Node {
             this.terminal = terminal;
             dstAddress = new InetSocketAddress(dstHost, dstPort);
             socket = new DatagramSocket(srcPort);
-            sender = new WindowedSender(this, 4, 8);
+            sender = new WindowedSender(this, dstAddress, 4, 8);
             sender.start();
             listener.go();
         }
@@ -93,7 +93,7 @@ public class Client extends Node {
             
             // Send packet with file name and length
             terminal.println("Sending packet w/ name & length");
-            sender.send(fcontent, dstAddress);
+            sender.send(fcontent);
             terminal.println("Packet sent");
             
             // Wait until acknowledgement returned

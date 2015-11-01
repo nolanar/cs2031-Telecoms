@@ -182,6 +182,22 @@ public class ArrayBlockingList<E> {
     }
     
     /**
+     * Blocks the calling thread until the queue is not empty.
+     * 
+     * @throws InterruptedException 
+     */
+    public void awaitNotEmpty() throws InterruptedException {
+        lock.lock();
+        try {
+            while (isEmpty()) {
+                notEmpty.await();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
      * Returns the number of elements in the queue.
      *
      * @return the number of elements in this queue
@@ -209,7 +225,7 @@ public class ArrayBlockingList<E> {
      * 
      * Call only when holding lock
      */
-    private boolean isEmpty() {
+    boolean isEmpty() {
         return count == 0;
     }
     

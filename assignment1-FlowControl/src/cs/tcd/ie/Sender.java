@@ -9,4 +9,6 @@ import java.net.InetSocketAddress;
 public interface Sender {
     
     public void send(PacketContent packet, InetSocketAddress address);
+    
+    public void start();
 }

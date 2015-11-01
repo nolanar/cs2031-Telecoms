@@ -22,12 +22,10 @@ public class Client extends Node {
     static final int DEFAULT_SRC_PORT = 50000;
     static final int DEFAULT_DST_PORT = 50001;
     static final String DEFAULT_DST_NODE = "localhost";	
-
+    
     Terminal terminal;
     InetSocketAddress dstAddress;
     
-    WindowedSender sender;
-
     /**
      * Constructor
      * 	 
@@ -35,9 +33,9 @@ public class Client extends Node {
      */
     Client(Terminal terminal, String dstHost, int dstPort, int srcPort) {
         try {
-            this.terminal= terminal;
-            dstAddress= new InetSocketAddress(dstHost, dstPort);
-            socket= new DatagramSocket(srcPort);
+            this.terminal = terminal;
+            dstAddress = new InetSocketAddress(dstHost, dstPort);
+            socket = new DatagramSocket(srcPort);
             sender = new WindowedSender(this, 4, 8);
             sender.start();
             listener.go();
@@ -51,12 +49,14 @@ public class Client extends Node {
     public synchronized void onReceipt(DatagramPacket packet) {
         PacketContent content= PacketContent.fromDatagramPacket(packet);
 
+        WindowedSender windowedSender = (WindowedSender)this.sender;
+        
         switch(content.getType()) {
         case PacketContent.ACKPACKET:
-            sender.ack(content.number);
+            windowedSender.ack(content.number);
             break;
         case PacketContent.NAKPACKET:
-            //send(packetContent);
+            windowedSender.nak(content.number, false);
             break;
         }
         

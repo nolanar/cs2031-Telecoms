@@ -26,14 +26,9 @@ public class Client extends Node {
 
     Terminal terminal;
     InetSocketAddress dstAddress;
+    
+    WindowedSender sender;
 
-    /**
-     * Packet Buffer
-     */
-    LinkedList<PacketContent> packetBuffer; // Buffers packets until window ready
-    
-    
-    
     /**
      * Constructor
      * 	 
@@ -44,11 +39,12 @@ public class Client extends Node {
             this.terminal= terminal;
             dstAddress= new InetSocketAddress(dstHost, dstPort);
             socket= new DatagramSocket(srcPort);
+            sender = new WindowedSender(this, 4, 8);
+            sender.start();
             listener.go();
         }
         catch(java.lang.Exception e) {e.printStackTrace();}
     }
-
 
     /**
      * Assume that incoming packets contain a String and print the string.
@@ -58,9 +54,11 @@ public class Client extends Node {
 
         switch(content.getType()) {
         case PacketContent.ACKPACKET:
+            sender.ack(content.number);
             break;
         case PacketContent.NAKPACKET:
             //send(packetContent);
+            break;
         }
         
         terminal.println(content.toString());
@@ -96,9 +94,7 @@ public class Client extends Node {
             
             // Send packet with file name and length
             terminal.println("Sending packet w/ name & length");
-            DatagramPacket packet= fcontent.toDatagramPacket();
-            packet.setSocketAddress(dstAddress);
-            socket.send(packet);
+            sender.add(fcontent, dstAddress);
             terminal.println("Packet sent");
             
             // Wait until acknowledgement returned

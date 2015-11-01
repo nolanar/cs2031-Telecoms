@@ -17,7 +17,7 @@ public class Server extends Node {
             try {
                     this.terminal= terminal;
                     socket= new DatagramSocket(port);
-                    listener.go();
+                        listener.go();
             }
             catch(java.lang.Exception e) {e.printStackTrace();}
     }

@@ -1,7 +1,7 @@
 package cs.tcd.ie;
 
 import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -106,7 +106,7 @@ public class WindowedSender implements Sender {
     }    
     
     @Override
-    public synchronized void send(PacketContent packet, InetSocketAddress address) {
+    public synchronized void send(PacketContent packet, SocketAddress address) {
         packet.number = bufferNumber;
         DatagramPacket dataPacket = packet.toDatagramPacket();
         dataPacket.setSocketAddress(address);

@@ -2,7 +2,7 @@ package cs.tcd.ie;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +42,7 @@ public class BufferedSender implements Sender {
     }
 
     @Override
-    public void send(PacketContent packet, InetSocketAddress address) {
+    public void send(PacketContent packet, SocketAddress address) {
             DatagramPacket dataPacket = packet.toDatagramPacket();
             dataPacket.setSocketAddress(address);
             sendBuffer.add(dataPacket); 

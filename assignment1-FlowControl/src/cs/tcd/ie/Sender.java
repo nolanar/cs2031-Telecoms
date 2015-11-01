@@ -1,6 +1,6 @@
 package cs.tcd.ie;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  *
@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
  */
 public interface Sender {
     
-    public void send(PacketContent packet, InetSocketAddress address);
+    public void send(PacketContent packet, SocketAddress address);
     
     public void start();
 }

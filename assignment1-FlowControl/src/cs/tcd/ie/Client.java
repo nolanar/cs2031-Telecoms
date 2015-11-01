@@ -8,7 +8,6 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.LinkedList;
 
 import tcdIO.*;
 
@@ -94,7 +93,7 @@ public class Client extends Node {
             
             // Send packet with file name and length
             terminal.println("Sending packet w/ name & length");
-            sender.add(fcontent, dstAddress);
+            sender.send(fcontent, dstAddress);
             terminal.println("Packet sent");
             
             // Wait until acknowledgement returned

@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
  *
  * @author aran
  */
-public class WindowedSender {
+public class WindowedSender implements Sender {
     
     private final Node parent;
     
@@ -23,7 +23,7 @@ public class WindowedSender {
     private final ExecutorService pool;
     private boolean started;
     
-    private final Sender sender;
+    private final BufferedSender sender;
     
     private final int sequenceLength;
     private final int windowLength;
@@ -42,7 +42,7 @@ public class WindowedSender {
         window = new ArrayBlockingList<>(windowLength);
         schedule = new DelayQueue<>();
         
-        sender = new Sender(parent);
+        sender = new BufferedSender(parent);
         
         pool = Executors.newFixedThreadPool(THREAD_COUNT);
         started = false;
@@ -95,7 +95,7 @@ public class WindowedSender {
             try {
                 // Wait for next packet to expire
                 ScheduledPacket schPacket = schedule.take(); // Blocking
-                sender.add(schPacket.getPacket());
+                sender.send(schPacket.getPacket());
                 // renew the delay on the packet and feed back into schedule
                 schedule.put(schPacket.repeat());
             } catch (InterruptedException e) {
@@ -105,12 +105,13 @@ public class WindowedSender {
         }    
     }    
     
-    public synchronized boolean add(PacketContent packet, InetSocketAddress address) {
+    @Override
+    public synchronized void send(PacketContent packet, InetSocketAddress address) {
         packet.number = bufferNumber;
         DatagramPacket dataPacket = packet.toDatagramPacket();
         dataPacket.setSocketAddress(address);
         bufferNumber = (bufferNumber + 1) % sequenceLength;
-        return windowBuffer.add(dataPacket);
+        windowBuffer.add(dataPacket);
     }
     
     /**

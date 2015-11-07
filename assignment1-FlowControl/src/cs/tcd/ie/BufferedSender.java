@@ -1,6 +1,5 @@
 package cs.tcd.ie;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.util.Date;
@@ -50,6 +49,14 @@ public class BufferedSender implements Sender {
             sendBuffer.add(dataPacket); 
     }
     
+    public boolean isEmpty() {
+        return sendBuffer.isEmpty();
+    }
+    
+    public DatagramPacket remove() {
+        return sendBuffer.remove();
+    }
+    
     private void sender() {
         ReentrantLock lock = new ReentrantLock();
         Condition sendTime = lock.newCondition();
@@ -57,13 +64,14 @@ public class BufferedSender implements Sender {
             lock.lock();
             try {
                 DatagramPacket packet = sendBuffer.take();
-                System.err.println("Sending...");
-                sendTime.awaitUntil(nextSendTime());
-                parent.socket.send(packet);
+//                sendTime.awaitUntil(nextSendTime());
+System.out.println("Sending: " + PacketContent.fromDatagramPacket(packet).getPacketNumber()
++ ", " + PacketContent.fromDatagramPacket(packet).toString());
+                if (parent != null) //TESTING
+                    parent.sendPacket(packet);
             } catch (InterruptedException ex) {
                 System.out.println("Terminating sender");
                 return;
-            } catch (IOException ex) {
             } finally {
                 lock.unlock();
             }
@@ -71,6 +79,6 @@ public class BufferedSender implements Sender {
     }
     
     private Date nextSendTime() {
-        return new Date(System.currentTimeMillis() + 2500); // returns current time.
+        return new Date(System.currentTimeMillis()); // returns current time.
     }
 }

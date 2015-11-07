@@ -98,7 +98,7 @@ public class ArrayBlockingList<E> {
             E result = items.get(position);
             if (position == back) {
                 enqueue(e);
-            } else {
+            } else { 
                 items.set(position, e);
             }
             return result;
@@ -287,7 +287,7 @@ public class ArrayBlockingList<E> {
      * Call only when holding lock.
      */
     private int position(int index) {
-        return (index - front + capacity) % capacity;
-    };
+        return (index + front) % capacity;
+    }
     
 }

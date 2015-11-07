@@ -1,5 +1,11 @@
 package cs.tcd.ie;
 
+import static cs.tcd.ie.Node.DEFAULT_DST_PORT;
+import static cs.tcd.ie.Node.DEFAULT_SRC_NODE;
+import static cs.tcd.ie.Node.DEFAULT_SRC_PORT;
+import java.net.InetSocketAddress;
+import tcdIO.Terminal;
+
 import java.net.SocketAddress;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -93,6 +99,7 @@ public class WindowedSender implements Sender {
             try {
                 // Wait for next packet to expire
                 ScheduledPacket schPacket = schedule.take(); // Blocking
+                System.out.println("Buffer: " + schPacket.getPacket().getPacketNumber()); //TESTING
                 sender.send(schPacket.getPacket());
                 // renew the delay on the packet and feed back into schedule
                 schedule.put(schPacket.repeat());
@@ -119,7 +126,6 @@ public class WindowedSender implements Sender {
     public synchronized boolean ack(int number) {
         boolean result;
         int relative = (number - windowStart + sequenceLength) % sequenceLength;
-        System.err.println("rel: " + relative); //<-- DEBUG
         if (0 < relative && relative < windowLength + 1) {
             for (int i = 0; i < relative; i++) {
                 ScheduledPacket schPacket = window.remove();
@@ -128,7 +134,7 @@ public class WindowedSender implements Sender {
             }
             result = true;
         } else {
-            System.err.println("Not in range"); //<-- DEBUG
+            System.out.println("Not in range"); //<-- DEBUG
             result = false;
         }
         return result;
@@ -169,5 +175,4 @@ public class WindowedSender implements Sender {
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;
     }
- 
 }

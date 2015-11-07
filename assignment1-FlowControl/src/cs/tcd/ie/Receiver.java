@@ -11,4 +11,8 @@ public interface Receiver {
     public boolean receive(DatagramPacket dataPacket);
     
     public void start();
+    
+    public boolean isEmpty();
+    
+    public PacketContent remove();
 }

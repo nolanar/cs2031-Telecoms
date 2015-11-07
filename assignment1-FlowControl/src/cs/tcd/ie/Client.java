@@ -8,6 +8,7 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.SocketAddress;
 
 import tcdIO.*;
 
@@ -19,12 +20,8 @@ import tcdIO.*;
  *
  */
 public class Client extends Node {
-    static final int DEFAULT_SRC_PORT = 50000;
-    static final int DEFAULT_DST_PORT = 50001;
-    static final String DEFAULT_DST_NODE = "localhost";	
-    
     Terminal terminal;
-    InetSocketAddress dstAddress;
+    WindowedSender sender;
     
     /**
      * Constructor
@@ -34,7 +31,8 @@ public class Client extends Node {
     Client(Terminal terminal, String dstHost, int dstPort, int srcPort) {
         try {
             this.terminal = terminal;
-            dstAddress = new InetSocketAddress(dstHost, dstPort);
+            
+            SocketAddress dstAddress = new InetSocketAddress(dstHost, dstPort);
             socket = new DatagramSocket(srcPort);
             sender = new WindowedSender(this, dstAddress, 4, 8);
             sender.start();
@@ -43,36 +41,49 @@ public class Client extends Node {
         catch(java.lang.Exception e) {e.printStackTrace();}
     }
 
-    /**
-     * Assume that incoming packets contain a String and print the string.
-     */
-    public synchronized void onReceipt(DatagramPacket packet) {
+    @Override
+    public void onReceipt(DatagramPacket packet) {
         PacketContent content= PacketContent.fromDatagramPacket(packet);
-
-        WindowedSender windowedSender = (WindowedSender)this.sender;
-        
+System.out.println("Received Packet: " + content); // TESTING
         switch(content.getType()) {
-        case PacketContent.ACKPACKET:
-            windowedSender.ack(content.number);
+        case PacketContent.ACK_FRAME:
+            sender.ack(content.number);
             break;
         case PacketContent.NAKPACKET:
-            windowedSender.nak(content.number, false);
+            sender.nak(content.number, false);
             break;
         }
-        
-        terminal.println(content.toString());
-        this.notify();
     }
 
-
+    @Override
+    public void packetReady(Receiver receiver) {
+    }
+     
+    @Override
+    public void bufferPacket(PacketContent content) {
+        sender.send(content);
+    }
+    
     /**
      * Sender Method
      * 
      */
-    public synchronized void start() throws Exception {
+    public void start() throws Exception {
         
         boolean running = true;
-        while (running) {
+        while (running) {            
+            readString();
+        }
+    }
+    
+    void readString() {
+        String message = terminal.readString();//"message: ");
+        StringContent content = new StringContent(message);
+//        terminal.println("Sending message");        
+        sender.send(content);
+    }
+    
+    void readFromFile() throws Exception {
             String fname= terminal.readString("Name of file to send: ");
 
             // Reserve buffer for length of file and read file
@@ -81,7 +92,7 @@ public class Client extends Node {
             int size;
             try (FileInputStream fin= new FileInputStream(file)) {
                 size= fin.read(buffer);
-            }
+            } 
             if (size==-1) {
                 throw new Exception("Problem with File Access");
             }
@@ -94,12 +105,7 @@ public class Client extends Node {
             // Send packet with file name and length
             terminal.println("Sending packet w/ name & length");
             sender.send(fcontent);
-            terminal.println("Packet sent");
-            
-            // Wait until acknowledgement returned
-            terminal.println("Please wait until server is ready to recieve again.");
-            this.wait();
-        }
+            terminal.println("Packet sent");        
     }
     
      /**

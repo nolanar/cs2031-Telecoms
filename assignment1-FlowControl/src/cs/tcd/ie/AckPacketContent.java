@@ -9,7 +9,6 @@ import java.io.ObjectOutputStream;
  */
 public class AckPacketContent extends PacketContent {
 
-    String info;
 
     /**
      * Constructor that takes in information about a file.
@@ -17,9 +16,8 @@ public class AckPacketContent extends PacketContent {
      * @param size Size of filename.
      */
     AckPacketContent(int number) {
+        type= ACK_FRAME;
         this.number = number;
-        type= ACKPACKET;
-        this.info = "";
     }
 
     /**
@@ -28,19 +26,18 @@ public class AckPacketContent extends PacketContent {
      * @param size Size of filename.
      */
     AckPacketContent(int number, String info) {
+        type= ACK_FRAME;
         this.number = number;
-        type= ACKPACKET;
-        this.info = info;
     }
 
     /**
      * Constructs an object out of a datagram packet.
-     * @param packet Packet that contains information about a file.
+     * @param oin
      */
     protected AckPacketContent(ObjectInputStream oin) {
         try {
-            type= ACKPACKET;
-            info= oin.readUTF();
+            type= ACK_FRAME;
+            number = oin.readInt();
         } 
         catch(Exception e) {e.printStackTrace();}
     }
@@ -48,10 +45,11 @@ public class AckPacketContent extends PacketContent {
     /**
      * Writes the content into an ObjectOutputStream
      *
+     * @param oout
      */
+    @Override
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
-            oout.writeUTF(info);
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -63,16 +61,8 @@ public class AckPacketContent extends PacketContent {
      * 
      * @return Returns the content of the packet as String.
      */
+    @Override
     public String toString() {
-        return "ACK" + number + ":" + info;
-    }
-
-    /**
-     * Returns the info contained in the packet.
-     * 
-     * @return Returns the info contained in the packet.
-     */
-    public String getPacketInfo() {
-        return info;
+        return "ACK" + number;
     }
 }

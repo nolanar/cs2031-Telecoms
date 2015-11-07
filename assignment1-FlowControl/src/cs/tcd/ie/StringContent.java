@@ -1,5 +1,6 @@
 package cs.tcd.ie;
 
+import static cs.tcd.ie.PacketContent.ACK_FRAME;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -7,36 +8,40 @@ import java.io.ObjectOutputStream;
  * Class for packet content that represents acknowledgments
  * 
  */
-public class NakPacketContent extends PacketContent {
+public class StringContent extends PacketContent {
+
+    String message;
 
     /**
      * Constructor that takes in information about a file.
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    NakPacketContent(int number) {
-        type= NAKPACKET;
-        this.number = number;
-    }    
-    
+    StringContent(String message) {
+        type= STRINGPACKET;
+        this.message = message;
+    }
+
     /**
      * Constructor that takes in information about a file.
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    NakPacketContent(int number, String info) {
-        type= NAKPACKET;
+    StringContent(int number, String message) {
         this.number = number;
+        type= STRINGPACKET;
+        this.message = message;
     }
 
     /**
      * Constructs an object out of a datagram packet.
-     * @param oin
+     * @param packet Packet that contains information about a file.
      */
-    protected NakPacketContent(ObjectInputStream oin) {
+    protected StringContent(ObjectInputStream oin) {
         try {
-            type= NAKPACKET;
+            type= STRINGPACKET;
             number = oin.readInt();
+            message= oin.readUTF();
         } 
         catch(Exception e) {e.printStackTrace();}
     }
@@ -44,12 +49,10 @@ public class NakPacketContent extends PacketContent {
     /**
      * Writes the content into an ObjectOutputStream
      *
-     * @param oout
      */
-    @Override
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
-            oout.writeInt(number);
+            oout.writeUTF(message);
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -61,8 +64,7 @@ public class NakPacketContent extends PacketContent {
      * 
      * @return Returns the content of the packet as String.
      */
-    @Override
     public String toString() {
-        return "NAK" + number;
+        return message;
     }
 }

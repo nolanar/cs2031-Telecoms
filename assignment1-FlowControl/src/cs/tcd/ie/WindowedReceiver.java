@@ -40,22 +40,47 @@ public class WindowedReceiver implements Receiver {
     
     @Override
     public synchronized boolean receive(DatagramPacket packet) {
+
         PacketContent content = PacketContent.fromDatagramPacket(packet);
         int packetNumber = content.getPacketNumber();
-        int relative = position(expectedNumber);
-        boolean received = false;
-        if (0 <= relative && relative < windowLength) {
+
+        System.out.println("Received Packet: " + content); // TESTING
+        
+        int numberPos = posInWindow(packetNumber);
+        int expectedPos = posInWindow(expectedNumber);
+        if (numberPos < expectedPos) {
+            window.set(numberPos, content);
+        } else if (numberPos == expectedPos) {
+            window.set(numberPos, content);
+            expectedNumber = nextNumber(expectedNumber);            
+        } else if (numberPos < windowLength) {
+            // NAK any missed packets
             while (expectedNumber != packetNumber) {
                 PacketContent nak = new NakPacketContent(expectedNumber);
-                parent.sender.send(nak);
+                System.out.println("Buffering NAK: " + nak.getPacketNumber()); // TESTING
+                parent.bufferPacket(nak);
                 expectedNumber = nextNumber(expectedNumber);
             }
-            window.set(relative, content);
-            received = true;
+            window.set(numberPos, content);
+            expectedNumber = nextNumber(expectedNumber);
+        } else {
+            // ACK packet that should be received next
+            PacketContent ack = new AckPacketContent(windowStart);
+            System.out.println("Buffering ACK: " + ack.getPacketNumber()); //TESTING
+            parent.bufferPacket(ack);
         }
-        return received;
+        return numberPos < windowLength;
+    }
+        
+    private int cyclicShift(int number, int shift, int modulo) {
+        int n = (number + shift) % modulo;
+        return n < 0 ? n + modulo : n;
     }
 
+    private int posInWindow(int number) {
+        return cyclicShift(number, -windowStart, sequenceLength);
+    }      
+    
     @Override
     public void start() {
         if (!started) {
@@ -63,6 +88,16 @@ public class WindowedReceiver implements Receiver {
             executor.execute(() -> feeder());
         }
     }
+    
+    @Override
+    public boolean isEmpty() {
+        return buffer.isEmpty();
+    }
+    
+    @Override
+    public PacketContent remove() {
+        return buffer.remove();
+    }    
     
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;
@@ -82,18 +117,20 @@ public class WindowedReceiver implements Receiver {
     
     private synchronized void ackAll() throws InterruptedException {
         int size = window.size();
+        // Move from window into buffer
         for (int i = 0; i < size; i++) {
             PacketContent content = window.remove();
             windowStart = nextNumber(windowStart);
             buffer.put(content);
         }
-        int ackNumber = (windowStart + size) % sequenceLength;
-        PacketContent ack = new AckPacketContent(ackNumber, "ACK" + ackNumber);
-        parent.sender.send(ack);
-        
-    }
+        parent.packetReady(this);
+        PacketContent ack = new AckPacketContent(windowStart);
+        System.out.println("Buffer to ACK:" + ack.getPacketNumber()); // TESTING
+        parent.bufferPacket(ack);
+    }  
     
-    private int position(int number) {
-        return (number - windowStart + sequenceLength) % sequenceLength;
-    }    
+    public static void main(String[] args) {
+        WindowedReceiver wr = new WindowedReceiver(null, 4, 8);
+        System.out.println(wr.posInWindow(0) + ", " + wr.posInWindow(wr.expectedNumber));
+    }
 }

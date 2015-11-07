@@ -18,24 +18,31 @@ public abstract class PacketContent {
      * Header content
      * 
      */
-    public static final byte ACKPACKET = 10;
+    // Supervisory
+    public static final byte ACK_FRAME = 0x10;
+    public static final byte NAK_BACKN = 0x11;
+    public static final byte NAK_SELECT = 0x12;
+    
     public static final byte NAKPACKET = 11;
-    public static final byte FILEINFO = 100;
+    // Infromation
+    public static final byte STRINGPACKET = 0x20;
+    public static final byte FILEINFO = 0x21;
 
-    byte type = 0;
+    byte type;
     int number = -1; // Invalid index by default
     
 
     /**
      * Constructs an object out of a datagram packet.
      * @param packet Packet to analyse.
+     * @return 
      */
     public static PacketContent fromDatagramPacket(DatagramPacket packet) {
         PacketContent content= null;
 
         try {
             int type;
-
+            
             byte[] data;
             ByteArrayInputStream bin;
             ObjectInputStream oin;
@@ -47,14 +54,17 @@ public abstract class PacketContent {
             type= oin.readByte();  // read type from beginning of packet
 
             switch(type) {   // depending on type create content object 
-            case ACKPACKET:
-                content= new AckPacketContent(oin);
+            case ACK_FRAME:
+                content = new AckPacketContent(oin);
                 break;
             case NAKPACKET:
-                content= new NakPacketContent(oin);
+                content = new NakPacketContent(oin);
                 break;
             case FILEINFO:
-                content= new FileInfoContent(oin);
+                content = new FileInfoContent(oin);
+                break;
+            case STRINGPACKET:
+                content = new StringContent(oin);
                 break;
             default:
                 content= null;

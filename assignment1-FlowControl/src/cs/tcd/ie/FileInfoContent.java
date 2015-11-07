@@ -30,6 +30,7 @@ public class FileInfoContent extends PacketContent {
     protected FileInfoContent(ObjectInputStream oin) {
         try {
             type= FILEINFO;
+            number = oin.readInt();
             filename= oin.readUTF();
             size= oin.readInt();
         } 

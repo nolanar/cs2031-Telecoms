@@ -1,7 +1,5 @@
 package cs.tcd.ie;
 
-import java.net.SocketAddress;
-
 /**
  *
  * @author aran

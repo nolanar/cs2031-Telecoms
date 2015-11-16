@@ -15,3 +15,7 @@
 hs_err_pid*
 /assignment1-FlowControl/nbproject/private/
 /assignment1-FlowControl/build/
+/assignment1-FlowControl/dist/
+
+# exceptions #
+!DragonConsolev3.jar

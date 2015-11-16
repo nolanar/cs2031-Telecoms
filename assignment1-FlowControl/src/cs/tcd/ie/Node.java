@@ -13,7 +13,7 @@ public abstract class Node {
 
     Terminal terminal;
 
-    public static boolean debug = true;
+    public static boolean debugMode = true;
     public static double dropRate = 0.15;
     
     static final int PACKETSIZE = 65536;
@@ -66,7 +66,7 @@ public abstract class Node {
                 Logger.getLogger(Node.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        if (debug) {
+        if (debugMode) {
             PacketContent content = PacketContent.fromDatagramPacket(packet);
             terminal.printSys("Sending " + content.getPacketNumber() + ": " + content);
             if (drop) {
@@ -103,7 +103,7 @@ public abstract class Node {
                 while(true) {
                     DatagramPacket packet = new DatagramPacket(new byte[PACKETSIZE], PACKETSIZE);
                     socket.receive(packet);
-                    if (debug) {
+                    if (debugMode) {
                         PacketContent content = PacketContent.fromDatagramPacket(packet);
                         terminal.printSys("Recieved " + content.getPacketNumber() + ": " + content);
                     }

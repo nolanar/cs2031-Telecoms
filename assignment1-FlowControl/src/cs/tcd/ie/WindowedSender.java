@@ -146,12 +146,10 @@ public class WindowedSender implements Sender {
             if (goBackN) {
                 // For 'go back n', resend all packets starting from the one NAK'ed
                 for (int i = relative; i < window.size(); i++) {
-                    System.out.println("Getting: " + i);
                     ScheduledPacket schPacket = window.get(i);
                     schedule.remove(schPacket);
                     schedule.add(schPacket.reset());
                 }
-                System.out.println("Got all!");
             } else {
                 // For 'selective repeat', resent the packet
                 ScheduledPacket schPacket = window.get(relative);

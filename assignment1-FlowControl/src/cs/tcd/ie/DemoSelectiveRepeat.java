@@ -17,8 +17,8 @@ public class DemoSelectiveRepeat extends Demo{
     public static void main(String[] args) {
         
         int windowSize = 4;
-        Node.debug = true;
-        Node.dropRate = 0.25;
+        Node.debugMode = true;
+        Node.dropRate = 0.20;
         
         Terminal clientTerm =  new Terminal("Client");
         Terminal serverTerm =  new Terminal("Server");

@@ -24,9 +24,9 @@ public class DemoGoBackN extends Demo{
         Terminal serverTerm =  new Terminal("Server");
         
         Client client = new Client(clientTerm, DEMO_HOST, DEMO_SRC_PORT,
-                DEMO_DST_PORT, windowSize, 2 * windowSize, true);
+                DEMO_DST_PORT, windowSize, windowSize + 1, true);
         Server server = new Server(serverTerm, DEMO_HOST, DEMO_SRC_PORT,
-                DEMO_DST_PORT, windowSize, 2 * windowSize, true);
+                DEMO_DST_PORT, 1, windowSize + 1, true);
         
         try {
             client.start();

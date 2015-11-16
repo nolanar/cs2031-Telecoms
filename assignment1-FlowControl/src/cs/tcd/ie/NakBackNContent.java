@@ -7,26 +7,25 @@ import java.io.ObjectOutputStream;
  * Class for packet content that represents acknowledgments
  * 
  */
-public class AckPacketContent extends PacketContent {
-
+public class NakBackNContent extends PacketContent {
 
     /**
      * Constructor that takes in information about a file.
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    AckPacketContent(int number) {
-        type= ACKPACKET;
+    NakBackNContent(int number) {
+        type= NAK_BACK_N;
         this.number = number;
-    }
-
+    }    
+    
     /**
      * Constructor that takes in information about a file.
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    AckPacketContent(int number, String info) {
-        type= ACKPACKET;
+    NakBackNContent(int number, String info) {
+        type= NAK_BACK_N;
         this.number = number;
     }
 
@@ -34,9 +33,9 @@ public class AckPacketContent extends PacketContent {
      * Constructs an object out of a datagram packet.
      * @param oin
      */
-    protected AckPacketContent(ObjectInputStream oin) {
+    protected NakBackNContent(ObjectInputStream oin) {
         try {
-            type= ACKPACKET;
+            type= NAK_BACK_N;
             number = oin.readInt();
         } 
         catch(Exception e) {e.printStackTrace();}
@@ -50,6 +49,7 @@ public class AckPacketContent extends PacketContent {
     @Override
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
+            oout.writeInt(number);
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -63,6 +63,6 @@ public class AckPacketContent extends PacketContent {
      */
     @Override
     public String toString() {
-        return "ACK" + number;
+        return "NAK" + number + " -- Go Back N";
     }
 }

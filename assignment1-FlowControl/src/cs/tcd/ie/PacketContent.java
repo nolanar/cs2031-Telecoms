@@ -19,11 +19,9 @@ public abstract class PacketContent {
      * 
      */
     // Supervisory
-    public static final byte ACK_FRAME = 0x10;
-    public static final byte NAK_BACKN = 0x11;
+    public static final byte ACKPACKET = 0x10;
+    public static final byte NAK_BACK_N = 0x11;
     public static final byte NAK_SELECT = 0x12;
-    
-    public static final byte NAKPACKET = 11;
     // Infromation
     public static final byte STRINGPACKET = 0x20;
     public static final byte FILEINFO = 0x21;
@@ -54,11 +52,14 @@ public abstract class PacketContent {
             type= oin.readByte();  // read type from beginning of packet
 
             switch(type) {   // depending on type create content object 
-            case ACK_FRAME:
+            case ACKPACKET:
                 content = new AckPacketContent(oin);
                 break;
-            case NAKPACKET:
-                content = new NakPacketContent(oin);
+            case NAK_SELECT:
+                content = new NakSelectContent(oin);
+                break;
+            case NAK_BACK_N:
+                content = new NakBackNContent(oin);
                 break;
             case FILEINFO:
                 content = new FileInfoContent(oin);

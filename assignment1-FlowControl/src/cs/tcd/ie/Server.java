@@ -5,30 +5,27 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import tcdIO.Terminal;
-
 public class Server extends Node {
 
-    final Terminal terminal;
     final BufferedSender sender;
     final WindowedReceiver receiver;
-
+    
     /**
      * 
      */
-    Server(Terminal terminal, String srcHost, int srcPort, int port) {
-            try {
-                socket= new DatagramSocket(port);
-            }
-            catch(java.lang.Exception e) {e.printStackTrace();}
-            
-            this.terminal= terminal;
-            SocketAddress srcAddress = new InetSocketAddress(srcHost, srcPort);
-            sender = new BufferedSender(this, srcAddress);
-            sender.start();
-            receiver = new WindowedReceiver(this, 4, 8);
-            receiver.start();
-            listener.go();
+    Server(Terminal terminal, String srcHost, int srcPort, int port,
+            int windowSize, int sequenceLength, boolean goBackN) {
+        try {
+            socket= new DatagramSocket(port);
+        }
+        catch(java.lang.Exception e) {e.printStackTrace();}
+        this.terminal= terminal;
+        SocketAddress srcAddress = new InetSocketAddress(srcHost, srcPort);
+        sender = new BufferedSender(this, srcAddress);
+        sender.start();
+        receiver = new WindowedReceiver(this, windowSize, sequenceLength, goBackN);
+        receiver.start();
+        listener.go();
     }
 
     @Override
@@ -66,14 +63,4 @@ public class Server extends Node {
         this.wait();
     }
 
-    /*
-     * 
-     */
-    public static void main(String[] args) {
-        try {					
-            Terminal terminal= new Terminal("Server");
-            (new Server(terminal, DEFAULT_SRC_NODE, DEFAULT_SRC_PORT, DEFAULT_DST_PORT)).start();
-            terminal.println("Program completed");
-        } catch(java.lang.Exception e) {e.printStackTrace();}
-    }
 }

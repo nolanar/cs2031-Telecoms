@@ -64,11 +64,8 @@ public class BufferedSender implements Sender {
             lock.lock();
             try {
                 DatagramPacket packet = sendBuffer.take();
-//                sendTime.awaitUntil(nextSendTime());
-System.out.println("Sending: " + PacketContent.fromDatagramPacket(packet).getPacketNumber()
-+ ", " + PacketContent.fromDatagramPacket(packet).toString());
-                if (parent != null) //TESTING
-                    parent.sendPacket(packet);
+                sendTime.awaitUntil(nextSendTime());
+                parent.sendPacket(packet);
             } catch (InterruptedException ex) {
                 System.out.println("Terminating sender");
                 return;

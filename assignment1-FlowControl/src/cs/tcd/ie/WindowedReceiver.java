@@ -12,6 +12,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class WindowedReceiver implements Receiver {
     private final Node parent;
     
+    private boolean goBackN;
+    
     private final ArrayBlockingList<PacketContent> window;
     private final LinkedBlockingQueue<PacketContent> buffer;
     
@@ -23,13 +25,15 @@ public class WindowedReceiver implements Receiver {
     private int windowStart;
     private int expectedNumber;
     
-    public WindowedReceiver(Node parent, int windowLength, int sequenceLength) {
+    public WindowedReceiver(Node parent, int windowLength, int sequenceLength, boolean goBackN) {
         this.parent = parent;
                 
         this.sequenceLength = sequenceLength;
         this.windowLength = windowLength;
         windowStart = 0;
         expectedNumber = 0;
+        
+        this.goBackN = goBackN;
         
         window = new ArrayBlockingList<>(windowLength);
         buffer = new LinkedBlockingQueue<>();
@@ -44,8 +48,6 @@ public class WindowedReceiver implements Receiver {
         PacketContent content = PacketContent.fromDatagramPacket(packet);
         int packetNumber = content.getPacketNumber();
 
-        System.out.println("Received Packet: " + content); // TESTING
-        
         int numberPos = posInWindow(packetNumber);
         int expectedPos = posInWindow(expectedNumber);
         if (numberPos < expectedPos) {
@@ -56,8 +58,12 @@ public class WindowedReceiver implements Receiver {
         } else if (numberPos < windowLength) {
             // NAK any missed packets
             while (expectedNumber != packetNumber) {
-                PacketContent nak = new NakPacketContent(expectedNumber);
-                System.out.println("Buffering NAK: " + nak.getPacketNumber()); // TESTING
+                PacketContent nak;
+                if (goBackN) {
+                    nak = new NakBackNContent(expectedNumber);
+                } else {
+                    nak = new NakSelectContent(expectedNumber);
+                }
                 parent.bufferPacket(nak);
                 expectedNumber = nextNumber(expectedNumber);
             }
@@ -66,7 +72,6 @@ public class WindowedReceiver implements Receiver {
         } else {
             // ACK packet that should be received next
             PacketContent ack = new AckPacketContent(windowStart);
-            System.out.println("Buffering ACK: " + ack.getPacketNumber()); //TESTING
             parent.bufferPacket(ack);
         }
         return numberPos < windowLength;
@@ -125,12 +130,7 @@ public class WindowedReceiver implements Receiver {
         }
         parent.packetReady(this);
         PacketContent ack = new AckPacketContent(windowStart);
-        System.out.println("Buffer to ACK:" + ack.getPacketNumber()); // TESTING
         parent.bufferPacket(ack);
     }  
-    
-    public static void main(String[] args) {
-        WindowedReceiver wr = new WindowedReceiver(null, 4, 8);
-        System.out.println(wr.posInWindow(0) + ", " + wr.posInWindow(wr.expectedNumber));
-    }
+
 }

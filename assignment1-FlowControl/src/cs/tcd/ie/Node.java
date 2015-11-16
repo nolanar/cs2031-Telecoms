@@ -10,11 +10,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class Node {
-    static final int DEFAULT_SRC_PORT = 50000;
-    static final int DEFAULT_DST_PORT = 50001;
-    static final String DEFAULT_DST_NODE = "localhost";	
-    static final String DEFAULT_SRC_NODE = "localhost";	
-   
+
+    Terminal terminal;
+
+    public static boolean debug = true;
+    public static double dropRate = 0.15;
+    
     static final int PACKETSIZE = 65536;
     
     DatagramSocket socket;
@@ -52,21 +53,27 @@ public abstract class Node {
     /**
      * Sends the packet immediately.
      * 
-     * 0.75 chance the packet will actually send.
+     * 'dropRate' chance the packet will not send.
      * 
      * @param packet
      */
     public void sendPacket(DatagramPacket packet) {
-        if (new Random().nextDouble() < 0.75) { 
-            // random packet drop
+        boolean drop = new Random().nextDouble() < dropRate;
+        if (!drop) { 
             try {
-            socket.send(packet);
+                socket.send(packet);
             } catch (IOException ex) {
                 Logger.getLogger(Node.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } else {
-            System.out.println("Dropped packet: " 
-                    + PacketContent.fromDatagramPacket(packet).getPacketNumber());
+        }
+        if (debug) {
+            PacketContent content = PacketContent.fromDatagramPacket(packet);
+            terminal.printSys("Sending " + content.getPacketNumber() + ": " + content);
+            if (drop) {
+                terminal.printSys(" ... Dropped!");
+            } else {
+                terminal.printSys(" ... Sent!");
+            }
         }
     }  
     
@@ -96,7 +103,10 @@ public abstract class Node {
                 while(true) {
                     DatagramPacket packet = new DatagramPacket(new byte[PACKETSIZE], PACKETSIZE);
                     socket.receive(packet);
-                    System.out.println("\nNode got: " + PacketContent.fromDatagramPacket(packet).getPacketNumber());
+                    if (debug) {
+                        PacketContent content = PacketContent.fromDatagramPacket(packet);
+                        terminal.printSys("Recieved " + content.getPacketNumber() + ": " + content);
+                    }
                     onReceipt(packet);
                 }
             } catch (Exception e) {if (!(e instanceof SocketException)) e.printStackTrace();}

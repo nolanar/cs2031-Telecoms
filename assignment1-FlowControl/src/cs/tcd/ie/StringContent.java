@@ -1,6 +1,5 @@
 package cs.tcd.ie;
 
-import static cs.tcd.ie.PacketContent.ACK_FRAME;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 

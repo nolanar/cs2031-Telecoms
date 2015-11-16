@@ -7,15 +7,15 @@ import java.io.ObjectOutputStream;
  * Class for packet content that represents acknowledgments
  * 
  */
-public class NakPacketContent extends PacketContent {
+public class NakSelectContent extends PacketContent {
 
     /**
      * Constructor that takes in information about a file.
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    NakPacketContent(int number) {
-        type= NAKPACKET;
+    NakSelectContent(int number) {
+        type= NAK_SELECT;
         this.number = number;
     }    
     
@@ -24,8 +24,8 @@ public class NakPacketContent extends PacketContent {
      * @param filename Initial filename.
      * @param size Size of filename.
      */
-    NakPacketContent(int number, String info) {
-        type= NAKPACKET;
+    NakSelectContent(int number, String info) {
+        type= NAK_SELECT;
         this.number = number;
     }
 
@@ -33,9 +33,9 @@ public class NakPacketContent extends PacketContent {
      * Constructs an object out of a datagram packet.
      * @param oin
      */
-    protected NakPacketContent(ObjectInputStream oin) {
+    protected NakSelectContent(ObjectInputStream oin) {
         try {
-            type= NAKPACKET;
+            type= NAK_SELECT;
             number = oin.readInt();
         } 
         catch(Exception e) {e.printStackTrace();}
@@ -63,6 +63,6 @@ public class NakPacketContent extends PacketContent {
      */
     @Override
     public String toString() {
-        return "NAK" + number;
+        return "NAK" + number + " -- Selective";
     }
 }

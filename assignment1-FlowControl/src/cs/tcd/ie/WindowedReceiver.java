@@ -63,6 +63,7 @@ public class WindowedReceiver implements Receiver {
             expectedNumber = nextNumber(expectedNumber);            
         } else {
             parent.bufferPacket(new NakBackNContent(expectedNumber));
+            parent.bufferPacket(new AckPacketContent(expectedNumber));
         }
         return gotExpected;
     }

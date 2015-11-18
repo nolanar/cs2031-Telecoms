@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
  *
  * @author aran
  */
-public class WindowedSender implements Sender {
+public class WindowedSender {
 
     private final LinkedBlockingQueue<PacketContent> windowBuffer;
     private final ArrayBlockingList<ScheduledPacket> window;
@@ -27,7 +27,7 @@ public class WindowedSender implements Sender {
     private int bufferNumber;
     private int windowStart;
     
-    public WindowedSender(Node parent, SocketAddress dstAddress,
+    public WindowedSender(Client parent, SocketAddress dstAddress,
             int windowLength, int sequenceLength) {
         
         sender = new BufferedSender(parent, dstAddress);
@@ -48,7 +48,6 @@ public class WindowedSender implements Sender {
     /**
      * Starts the WindowedSender
      */
-    @Override
     public void start() {
         if (!started) {
             started = true;
@@ -103,7 +102,6 @@ public class WindowedSender implements Sender {
         }    
     }    
     
-    @Override
     public synchronized void send(PacketContent packet) {
         packet.number = bufferNumber;
         bufferNumber = nextNumber(bufferNumber);

@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ScheduledPacket implements Delayed {
         
-    public static final long REPEAT_TIME = TimeUnit.SECONDS.toNanos(5);
+    public static final long REPEAT_TIME = TimeUnit.SECONDS.toNanos(2);
 
     private long delay;
     private final PacketContent packet;
@@ -20,21 +20,9 @@ public class ScheduledPacket implements Delayed {
      * Delay time in nanoseconds.
      * 
      * @param packet
-     * @param delay
-     * @param unit
      */
-    public ScheduledPacket(PacketContent packet, long delay, TimeUnit unit) {
-        this.delay = unit.toNanos(delay) + System.nanoTime();
-        this.packet = packet;
-    }
-
     public ScheduledPacket(PacketContent packet) {
         this.delay = System.nanoTime();
-        this.packet = packet;
-    }
-
-    private ScheduledPacket(PacketContent packet, long delay) {
-        this.delay = delay;
         this.packet = packet;
     }
 
@@ -59,11 +47,6 @@ public class ScheduledPacket implements Delayed {
     
     public synchronized ScheduledPacket repeat() {
         delay += REPEAT_TIME;
-        return this;
-    }
-
-    public synchronized ScheduledPacket repeat(long time, TimeUnit unit) {
-        delay += unit.toNanos(time);
         return this;
     }
     

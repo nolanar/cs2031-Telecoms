@@ -12,8 +12,12 @@ import java.util.logging.Logger;
  *
  * @author aran
  */
-public class DemoStopAndWait extends Demo{
+public class DemoStopAndWait {
 
+    public static final int DEMO_CLIENT_PORT = 50000;
+    public static final int DEMO_SERVER_PORT = 50001;
+    public static final String DEMO_HOST = "localhost";    
+    
     public static void main(String[] args) {
         
         Node.debugMode = true;
@@ -22,10 +26,10 @@ public class DemoStopAndWait extends Demo{
         Terminal clientTerm =  new Terminal("Client");
         Terminal serverTerm =  new Terminal("Server");
         
-        Client client = new Client(clientTerm, DEMO_HOST, DEMO_SRC_PORT,
-                DEMO_DST_PORT, 1, 2, false);
-        Server server = new Server(serverTerm, DEMO_HOST, DEMO_SRC_PORT,
-                DEMO_DST_PORT, 1, 2, false);
+        Client client = new Client(clientTerm, DEMO_HOST, DEMO_CLIENT_PORT,
+                DEMO_SERVER_PORT, 1, 2, false);
+        Server server = new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT,
+                DEMO_SERVER_PORT, 1, 2, false);
         
         try {
             client.start();

@@ -47,10 +47,6 @@ public class Client extends Node {
             break;
         }
     }
-
-    @Override
-    public void packetReady(Receiver receiver) {
-    }
      
     @Override
     public void bufferPacket(PacketContent content) {

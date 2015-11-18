@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author aran
  */
-public class BufferedSender implements Sender {
+public class BufferedSender {
     private final Node parent;
     private final SocketAddress dstAddress;
 
@@ -30,19 +30,13 @@ public class BufferedSender implements Sender {
         executor = Executors.newSingleThreadExecutor();
     }
     
-    @Override
     public void start() {
         if (!started) {
             started = true;
             executor.execute(() -> sender());
         }
     }
-    
-    public void send(DatagramPacket packet) {
-            sendBuffer.add(packet);        
-    }
 
-    @Override
     public void send(PacketContent packet) {
             DatagramPacket dataPacket = packet.toDatagramPacket();
             dataPacket.setSocketAddress(dstAddress);

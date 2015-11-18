@@ -9,8 +9,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  *
  * @author aran
  */
-public class WindowedReceiver implements Receiver {
-    private final Node parent;
+public class WindowedReceiver {
+    private final Server parent;
     
     private boolean goBackN;
     
@@ -25,7 +25,7 @@ public class WindowedReceiver implements Receiver {
     private int windowStart;
     private int expectedNumber;
     
-    public WindowedReceiver(Node parent, int windowLength, int sequenceLength, boolean goBackN) {
+    public WindowedReceiver(Server parent, int windowLength, int sequenceLength, boolean goBackN) {
         this.parent = parent;
                 
         this.sequenceLength = sequenceLength;
@@ -42,7 +42,6 @@ public class WindowedReceiver implements Receiver {
         started = false;
     }
     
-    @Override
     public synchronized boolean receive(DatagramPacket packet) {
         PacketContent content = PacketContent.fromDatagramPacket(packet);
         
@@ -102,7 +101,6 @@ public class WindowedReceiver implements Receiver {
         return cyclicShift(number, -windowStart, sequenceLength);
     }      
     
-    @Override
     public void start() {
         if (!started) {
             started = true;
@@ -110,12 +108,10 @@ public class WindowedReceiver implements Receiver {
         }
     }
     
-    @Override
     public boolean isEmpty() {
         return buffer.isEmpty();
     }
     
-    @Override
     public PacketContent remove() {
         return buffer.remove();
     }    

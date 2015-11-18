@@ -35,9 +35,13 @@ public class Server extends Node {
         }
         catch(Exception e) {e.printStackTrace();}
     }
-  
-    @Override
-    public void packetReady(Receiver receiver) {
+
+    /**
+     * Action to take upon packets entering the received buffer.
+     * 
+     * @param receiver
+     */
+    public void packetReady(WindowedReceiver receiver) {
         while (!receiver.isEmpty()) {
             PacketContent content = receiver.remove();
             

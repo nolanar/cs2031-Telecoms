@@ -31,11 +31,5 @@ public class DemoStopAndWait {
         Server server = new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT,
                 DEMO_SERVER_PORT, 1, 2, false);
         
-        try {
-            client.start();
-            server.start();
-        } catch (Exception ex) {
-            Logger.getLogger(DemoStopAndWait.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 }

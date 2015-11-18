@@ -4,11 +4,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Server extends Node {
 
-    final BufferedSender sender;
-    final WindowedReceiver receiver;
+    final ReceiverWindow window;
     
     /**
      * 
@@ -21,17 +21,18 @@ public class Server extends Node {
         catch(java.lang.Exception e) {e.printStackTrace();}
         this.terminal= terminal;
         SocketAddress srcAddress = new InetSocketAddress(srcHost, srcPort);
-        sender = new BufferedSender(this, srcAddress);
+        sender = new Sender(this, srcAddress);
         sender.start();
-        receiver = new WindowedReceiver(this, windowSize, sequenceLength, goBackN);
-        receiver.start();
+        window = new ReceiverWindow(this, windowSize, sequenceLength, goBackN);
+        window.start();
+        receiver = new LinkedBlockingQueue<>();
         listener.go();
     }
 
     @Override
     public void onReceipt(DatagramPacket packet) {
         try {
-            receiver.receive(packet);
+            window.receive(packet);
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -39,9 +40,9 @@ public class Server extends Node {
     /**
      * Action to take upon packets entering the received buffer.
      * 
-     * @param receiver
      */
-    public void packetReady(WindowedReceiver receiver) {
+    @Override
+    public void packetReady() {
         while (!receiver.isEmpty()) {
             PacketContent content = receiver.remove();
             
@@ -56,19 +57,17 @@ public class Server extends Node {
             }
         }
     }
-    
+
     /**
-     * Puts the packet in the send buffer to await being sent.
-     * 
-     * @param content
-     */    
-    public void bufferPacket(PacketContent content) {
-        sender.add(content);
+     * The server passively waits for packets.
+     */
+    @Override
+    public PacketContent getPacket() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
     public synchronized void start() throws Exception {
         terminal.println("Waiting for contact");
         this.wait();
     }
-
 }

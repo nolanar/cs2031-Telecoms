@@ -6,11 +6,15 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class Node {
 
+    Sender sender;
+    LinkedBlockingQueue<PacketContent> receiver;
+    
     Terminal terminal;
 
     public static boolean debugMode = true;
@@ -36,6 +40,30 @@ public abstract class Node {
       */
     public abstract void onReceipt(DatagramPacket packet);
 
+
+    /**
+     * Action to take upon packets entering the received buffer.
+     * 
+     */
+    public abstract void packetReady();
+    
+    /**
+     * Puts the packet in the send buffer to await being sent.
+     * 
+     * @param content
+     */    
+    public void bufferPacket(PacketContent content) {
+        sender.add(content);
+    }  
+    
+    /**
+     * Attempts to get an input packet.
+     * 
+     * This must be a blocking method.
+     * 
+     * @return the next input packet
+     */
+    public abstract PacketContent getPacket();
     
     /**
      * Sends the packet immediately.

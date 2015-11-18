@@ -31,12 +31,5 @@ public class DemoGoBackN {
                 DEMO_SERVER_PORT, windowSize, windowSize + 1, true);
         Server server = new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT,
                 DEMO_SERVER_PORT, 1, windowSize + 1, true);
-        
-        try {
-            client.start();
-            server.start();
-        } catch (Exception ex) {
-            Logger.getLogger(DemoGoBackN.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 }

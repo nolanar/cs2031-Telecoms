@@ -5,9 +5,6 @@
  */
 package cs.tcd.ie;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  *
  * @author aran
@@ -31,12 +28,6 @@ public class DemoSelectiveRepeat {
                 DEMO_SERVER_PORT, windowSize, 2 * windowSize, false);
         Server server = new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT,
                 DEMO_SERVER_PORT, windowSize, 2 * windowSize, false);
-        
-        try {
-            client.start();
-            server.start();
-        } catch (Exception ex) {
-            Logger.getLogger(DemoSelectiveRepeat.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
     }
 }

@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.SocketAddress;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Client class.
@@ -13,7 +14,7 @@ import java.net.SocketAddress;
  * An instance accepts user input 
  */
 public class Client extends Node {
-    WindowedSender sender;
+    SenderWindow window;
     
     /**
      * Constructor
@@ -27,7 +28,10 @@ public class Client extends Node {
         } catch(java.lang.Exception e) {e.printStackTrace();}
         this.terminal = terminal;
         SocketAddress dstAddress = new InetSocketAddress(dstHost, dstPort);
-        sender = new WindowedSender(this, dstAddress, windowSize, sequenceLength);
+        window = new SenderWindow(this, windowSize, sequenceLength);
+        sender = new Sender(this, dstAddress);
+        receiver = new LinkedBlockingQueue<>();
+        window.start();
         sender.start();
         listener.go();
     }
@@ -37,36 +41,41 @@ public class Client extends Node {
         PacketContent content= PacketContent.fromDatagramPacket(packet);
         switch(content.getType()) {
         case PacketContent.ACKPACKET:
-            sender.ack(content.number);
+            window.ack(content.number);
             break;
         case PacketContent.NAK_SELECT:
-            sender.nak(content.number, false);
+            window.nak(content.number, false);
             break;
         case PacketContent.NAK_BACK_N:
-            sender.nak(content.number, true);
+            window.nak(content.number, true);
             break;
         }
     }
-    
+
     /**
-     * Sender Method
-     * 
+     * Client is never expected to receive information packets.
      */
-    public void start() throws Exception {
-        
-        boolean running = true;
-        while (running) {            
-            readString();
-        }
+    @Override
+    public void packetReady() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void bufferPacket(PacketContent content) {
+        sender.add(content);
+    }
+
+    @Override
+    public PacketContent getPacket() {
+        return readString();
     }
     
-    void readString() {
+    PacketContent readString() {
         String message = terminal.readLine();
-        StringContent content = new StringContent(message);
-        sender.send(content);
+        return new StringContent(message);
     }
     
-    void readFromFile() throws Exception {
+    PacketContent readFromFile() throws Exception {
         String fname= terminal.readLine();
 
         // Reserve buffer for length of file and read file
@@ -87,7 +96,6 @@ public class Client extends Node {
 
         // Send packet with file name and length
         terminal.printSys("Sending packet w/ name & length");
-        sender.send(fcontent);
-        terminal.printSys("Packet sent");        
+        return fcontent;
     }
 }

@@ -9,13 +9,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  *
  * @author aran
  */
-public class WindowedReceiver {
+public class ReceiverWindow {
     private final Server parent;
     
     private boolean goBackN;
     
     private final ArrayBlockingList<PacketContent> window;
-    private final LinkedBlockingQueue<PacketContent> buffer;
     
     private final ExecutorService executor;
     private boolean started;
@@ -25,7 +24,7 @@ public class WindowedReceiver {
     private int windowStart;
     private int expectedNumber;
     
-    public WindowedReceiver(Server parent, int windowLength, int sequenceLength, boolean goBackN) {
+    public ReceiverWindow(Server parent, int windowLength, int sequenceLength, boolean goBackN) {
         this.parent = parent;
                 
         this.sequenceLength = sequenceLength;
@@ -36,7 +35,6 @@ public class WindowedReceiver {
         this.goBackN = goBackN;
         
         window = new ArrayBlockingList<>(windowLength);
-        buffer = new LinkedBlockingQueue<>();
         
         executor = Executors.newSingleThreadExecutor();
         started = false;
@@ -108,14 +106,6 @@ public class WindowedReceiver {
         }
     }
     
-    public boolean isEmpty() {
-        return buffer.isEmpty();
-    }
-    
-    public PacketContent remove() {
-        return buffer.remove();
-    }    
-    
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;
     }
@@ -134,13 +124,14 @@ public class WindowedReceiver {
     
     private synchronized void ackAll() throws InterruptedException {
         int size = window.size();
+        System.err.println(parent.receiver.size());
         // Move from window into buffer
         for (int i = 0; i < size; i++) {
             PacketContent content = window.remove();
             windowStart = nextNumber(windowStart);
-            buffer.put(content);
+            parent.receiver.put(content);
         }
-        parent.packetReady(this);
+        parent.packetReady();
         PacketContent ack = new AckPacketContent(windowStart);
         parent.bufferPacket(ack);
     }  

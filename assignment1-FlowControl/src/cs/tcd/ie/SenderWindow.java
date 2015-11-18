@@ -1,8 +1,6 @@
 package cs.tcd.ie;
 
-import java.net.SocketAddress;
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -11,16 +9,13 @@ import java.util.concurrent.Executors;
  * 
  * @author aran
  */
-public class WindowedSender {
-
-    private final LinkedBlockingQueue<PacketContent> buffer;
+public class SenderWindow {
+    private final Node parent;
     
     // window components:
     private final ArrayBlockingList<ScheduledPacket> windowPackets;
     private final DelayQueue<ScheduledPacket> windowTimers;
     
-    private final BufferedSender sender;
-
     private static final int THREAD_COUNT = 2;
     private final ExecutorService pool;
     private boolean started;
@@ -30,17 +25,14 @@ public class WindowedSender {
     private int bufferNumber;
     private int windowStart;
     
-    public WindowedSender(Client parent, SocketAddress dstAddress,
-            int windowLength, int sequenceLength) {
-        
-        sender = new BufferedSender(parent, dstAddress);
+    public SenderWindow(Client parent, int windowLength, int sequenceLength) {
+        this.parent = parent;
                 
         this.sequenceLength = sequenceLength;
         this.windowLength = windowLength;
         bufferNumber = 0;
         windowStart = 0;
 
-        buffer = new LinkedBlockingQueue<>();
         windowPackets = new ArrayBlockingList<>(windowLength);
         windowTimers = new DelayQueue<>();
         
@@ -49,30 +41,31 @@ public class WindowedSender {
     }
 
     /**
-     * Starts the WindowedSender
+     * Starts the SenderWindow
      */
     public void start() {
         if (!started) {
             started = true;
-            pool.execute(() -> bufferToWindow());
+            pool.execute(() -> inputToWindow());
             pool.execute(() -> windowWorker());
-            sender.start();
         }
     }
 
     
     /**
-     * Feeds packets from buffer to window.
+     * Get packet from the input put it into the window.
      * 
      * Packets are fed from buffer to window when buffer is not empty and
      * window is not full. Any packets added to window are also added to
      * schedule.
      */
-    private void bufferToWindow() {
+    private void inputToWindow() {
         while (true) {
             try {
                 windowPackets.awaitNotFull();                // Blocking
-                PacketContent packet = buffer.take();  // Blocking
+                PacketContent packet = parent.getPacket();  // Blocking
+                packet.number = bufferNumber;
+                bufferNumber = nextNumber(bufferNumber);
                 ScheduledPacket schPacket = new ScheduledPacket(packet);
                 //Add packet to both of the window components:
                 windowPackets.add(schPacket);
@@ -96,7 +89,7 @@ public class WindowedSender {
             try {
                 // Wait for next packet to expire
                 ScheduledPacket schPacket = windowTimers.take(); // Blocking
-                sender.add(schPacket.getPacket());
+                parent.bufferPacket(schPacket.getPacket());
                 // renew the delay on the packet and feed back into schedule
                 windowTimers.put(schPacket.repeat());
             } catch (InterruptedException e) {
@@ -105,17 +98,6 @@ public class WindowedSender {
             }
         }    
     }    
-    
-    /**
-     * Add the packet to the BufferedSender.
-     * 
-     * @param packet the packet to be added
-     */
-    public synchronized void send(PacketContent packet) {
-        packet.number = bufferNumber;
-        bufferNumber = nextNumber(bufferNumber);
-        buffer.add(packet);
-    }
     
     /**
      * Action to be taken upon the receipt of an ACK

@@ -57,9 +57,13 @@ public class Server extends Node {
         }
     }
     
-    @Override
+    /**
+     * Puts the packet in the send buffer to await being sent.
+     * 
+     * @param content
+     */    
     public void bufferPacket(PacketContent content) {
-        sender.send(content);
+        sender.add(content);
     }
     
     public synchronized void start() throws Exception {

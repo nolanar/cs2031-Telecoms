@@ -47,11 +47,6 @@ public class Client extends Node {
             break;
         }
     }
-     
-    @Override
-    public void bufferPacket(PacketContent content) {
-        sender.send(content);
-    }
     
     /**
      * Sender Method

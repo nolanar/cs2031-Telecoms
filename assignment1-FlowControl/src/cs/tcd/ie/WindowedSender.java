@@ -7,20 +7,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- *
+ * A buffered packet sender which corrects for packet loss.
+ * 
  * @author aran
  */
 public class WindowedSender {
 
-    private final LinkedBlockingQueue<PacketContent> windowBuffer;
-    private final ArrayBlockingList<ScheduledPacket> window;
-    private final DelayQueue<ScheduledPacket> schedule;
+    private final LinkedBlockingQueue<PacketContent> buffer;
+    
+    // window components:
+    private final ArrayBlockingList<ScheduledPacket> windowPackets;
+    private final DelayQueue<ScheduledPacket> windowTimers;
+    
+    private final BufferedSender sender;
 
     private static final int THREAD_COUNT = 2;
     private final ExecutorService pool;
     private boolean started;
-    
-    private final BufferedSender sender;
     
     private final int sequenceLength;
     private final int windowLength;
@@ -37,9 +40,9 @@ public class WindowedSender {
         bufferNumber = 0;
         windowStart = 0;
 
-        windowBuffer = new LinkedBlockingQueue<>();
-        window = new ArrayBlockingList<>(windowLength);
-        schedule = new DelayQueue<>();
+        buffer = new LinkedBlockingQueue<>();
+        windowPackets = new ArrayBlockingList<>(windowLength);
+        windowTimers = new DelayQueue<>();
         
         pool = Executors.newFixedThreadPool(THREAD_COUNT);
         started = false;
@@ -51,8 +54,8 @@ public class WindowedSender {
     public void start() {
         if (!started) {
             started = true;
-            pool.execute(() -> feeder());
-            pool.execute(() -> scheduleHandler());
+            pool.execute(() -> bufferToWindow());
+            pool.execute(() -> windowWorker());
             sender.start();
         }
     }
@@ -65,14 +68,15 @@ public class WindowedSender {
      * window is not full. Any packets added to window are also added to
      * schedule.
      */
-    private void feeder() {
+    private void bufferToWindow() {
         while (true) {
             try {
-                window.awaitNotFull();                // Blocking
-                PacketContent packet = windowBuffer.take();  // Blocking
+                windowPackets.awaitNotFull();                // Blocking
+                PacketContent packet = buffer.take();  // Blocking
                 ScheduledPacket schPacket = new ScheduledPacket(packet);
-                window.add(schPacket);
-                schedule.add(schPacket);
+                //Add packet to both of the window components:
+                windowPackets.add(schPacket);
+                windowTimers.add(schPacket);
             } catch (InterruptedException e) {
                 System.out.println("Terminating feeder"); //--> DEBUG
                 return;
@@ -87,14 +91,14 @@ public class WindowedSender {
      * Handles packet when associated delay expires. The packet delay is
      * extended (by REPEAT_TIME) and is fed back into schedule.
      */
-    private void scheduleHandler() {
+    private void windowWorker() {
         while (true) {
             try {
                 // Wait for next packet to expire
-                ScheduledPacket schPacket = schedule.take(); // Blocking
-                sender.send(schPacket.getPacket());
+                ScheduledPacket schPacket = windowTimers.take(); // Blocking
+                sender.add(schPacket.getPacket());
                 // renew the delay on the packet and feed back into schedule
-                schedule.put(schPacket.repeat());
+                windowTimers.put(schPacket.repeat());
             } catch (InterruptedException e) {
                 System.out.println("Terminating scheduleHandler"); //DEBUG
                 return;
@@ -102,10 +106,15 @@ public class WindowedSender {
         }    
     }    
     
+    /**
+     * Add the packet to the BufferedSender.
+     * 
+     * @param packet the packet to be added
+     */
     public synchronized void send(PacketContent packet) {
         packet.number = bufferNumber;
         bufferNumber = nextNumber(bufferNumber);
-        windowBuffer.add(packet);
+        buffer.add(packet);
     }
     
     /**
@@ -116,12 +125,12 @@ public class WindowedSender {
      */
     public synchronized boolean ack(int number) {
         boolean result;
-        int relative = (number - windowStart + sequenceLength) % sequenceLength;
+        int relative = relativeNumber(number);
         if (0 < relative && relative < windowLength + 1) {
             for (int i = 0; i < relative; i++) {
-                ScheduledPacket schPacket = window.remove();
+                ScheduledPacket schPacket = windowPackets.remove();
                 windowStart = nextNumber(windowStart);
-                schedule.remove(schPacket);
+                windowTimers.remove(schPacket);
             }
             result = true;
         } else {
@@ -139,21 +148,21 @@ public class WindowedSender {
      */
     public synchronized boolean nak(int number, boolean goBackN) {
         boolean result;
-        int relative = (number - windowStart + sequenceLength) % sequenceLength;
+        int relative = relativeNumber(number);
         if (relative < windowLength) {
             // For 'go back n', resend all packets starting from the one NAK'ed
             if (goBackN) {
-                for (int i = relative; i < window.size(); i++) {
-                    ScheduledPacket schPacket = window.get(i);
-                    schedule.remove(schPacket);
-                    schedule.add(schPacket.reset());
+                for (int i = relative; i < windowPackets.size(); i++) {
+                    ScheduledPacket schPacket = windowPackets.get(i);
+                    windowTimers.remove(schPacket);
+                    windowTimers.add(schPacket.reset());
                 }
             }
             // For 'selective repeat', resent the packet
             else {
-                ScheduledPacket schPacket = window.get(relative);
-                schedule.remove(schPacket);
-                schedule.add(schPacket.reset());
+                ScheduledPacket schPacket = windowPackets.get(relative);
+                windowTimers.remove(schPacket);
+                windowTimers.add(schPacket.reset());
             }
             
             result = true;
@@ -163,7 +172,17 @@ public class WindowedSender {
         return result;
     }
     
+    /**
+     * Returns the following number in the sequence.
+     */
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;
+    }
+    
+    /**
+     * Returns the relative position to the start of the window of number.
+     */
+    public int relativeNumber(int number) {
+        return (number - windowStart + sequenceLength) % sequenceLength;
     }
 }

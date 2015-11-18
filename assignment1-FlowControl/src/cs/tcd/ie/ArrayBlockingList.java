@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.*;
 
 /**
- * A data structure with functionality of both a fixed sized list and a queue.
+ * A data structure with functionality of both a fixed sized array and a queue.
  * 
  * 
  * 

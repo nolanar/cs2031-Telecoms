@@ -11,7 +11,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- *
+ * A buffered packet sender which does not correct for packet loss.
+ * 
  * @author aran
  */
 public class BufferedSender {
@@ -30,6 +31,12 @@ public class BufferedSender {
         executor = Executors.newSingleThreadExecutor();
     }
     
+    /**
+     * Begin the sender worker thread.
+     * 
+     * Tries to take a packet from the buffer to pass to the parent node to
+     * be sent.
+     */
     public void start() {
         if (!started) {
             started = true;
@@ -37,20 +44,23 @@ public class BufferedSender {
         }
     }
 
-    public void send(PacketContent packet) {
+    /**
+     * Add packet to buffer to be sent.
+     * 
+     * @param packet 
+     */
+    public void add(PacketContent packet) {
             DatagramPacket dataPacket = packet.toDatagramPacket();
             dataPacket.setSocketAddress(dstAddress);
             sendBuffer.add(dataPacket); 
     }
     
-    public boolean isEmpty() {
-        return sendBuffer.isEmpty();
-    }
-    
-    public DatagramPacket remove() {
-        return sendBuffer.remove();
-    }
-    
+    /**
+     * Sender worker thread runs this method upon creation.
+     * 
+     * Tries to take a packet from the buffer to pass to the parent node to
+     * be sent.
+     */
     private void sender() {
         ReentrantLock lock = new ReentrantLock();
         Condition sendTime = lock.newCondition();
@@ -69,6 +79,11 @@ public class BufferedSender {
         }
     }
     
+    /**
+     * Returns the time at which the sender should pass the packet to it's parent.
+     * 
+     * Can be used to synchronise sending packets, etc. 
+     */
     private Date nextSendTime() {
         return new Date(System.currentTimeMillis()); // returns current time.
     }

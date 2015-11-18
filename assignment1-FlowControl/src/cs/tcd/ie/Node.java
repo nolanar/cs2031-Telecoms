@@ -36,12 +36,6 @@ public abstract class Node {
       */
     public abstract void onReceipt(DatagramPacket packet);
 
-    /**
-     * Puts the packet in the send buffer to await being sent.
-     * 
-     * @param content
-     */
-    public abstract void bufferPacket(PacketContent content);
     
     /**
      * Sends the packet immediately.

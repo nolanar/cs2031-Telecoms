@@ -104,7 +104,7 @@ public class WindowedReceiver {
     public void start() {
         if (!started) {
             started = true;
-            executor.execute(() -> feeder());
+            executor.execute(() -> windowToBuffer());
         }
     }
     
@@ -120,7 +120,7 @@ public class WindowedReceiver {
         return (number + 1) % sequenceLength;
     }
     
-    private void feeder() {
+    private void windowToBuffer() {
         while (true) {
             try {
                 window.awaitNotEmpty();

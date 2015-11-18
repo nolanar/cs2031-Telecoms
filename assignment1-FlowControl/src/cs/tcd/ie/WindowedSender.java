@@ -143,15 +143,16 @@ public class WindowedSender implements Sender {
         boolean result;
         int relative = (number - windowStart + sequenceLength) % sequenceLength;
         if (relative < windowLength) {
+            // For 'go back n', resend all packets starting from the one NAK'ed
             if (goBackN) {
-                // For 'go back n', resend all packets starting from the one NAK'ed
                 for (int i = relative; i < window.size(); i++) {
                     ScheduledPacket schPacket = window.get(i);
                     schedule.remove(schPacket);
                     schedule.add(schPacket.reset());
                 }
-            } else {
-                // For 'selective repeat', resent the packet
+            }
+            // For 'selective repeat', resent the packet
+            else {
                 ScheduledPacket schPacket = window.get(relative);
                 schedule.remove(schPacket);
                 schedule.add(schPacket.reset());

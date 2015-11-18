@@ -44,10 +44,31 @@ public class WindowedReceiver implements Receiver {
     
     @Override
     public synchronized boolean receive(DatagramPacket packet) {
-
         PacketContent content = PacketContent.fromDatagramPacket(packet);
+        
+        boolean result;
+        if (goBackN) { 
+            result = receiveGoBackN(content);
+        } else {
+            result = receiveSelectiveRepeat(content);            
+        }
+        return result;
+    }
+    
+    private boolean receiveGoBackN(PacketContent content) {
         int packetNumber = content.getPacketNumber();
-
+        boolean gotExpected = packetNumber == expectedNumber;
+        if (gotExpected) {
+            window.set(0, content);
+            expectedNumber = nextNumber(expectedNumber);            
+        } else {
+            parent.bufferPacket(new NakBackNContent(expectedNumber));
+        }
+        return gotExpected;
+    }
+    
+    private boolean receiveSelectiveRepeat(PacketContent content) {
+        int packetNumber = content.getPacketNumber();
         int numberPos = posInWindow(packetNumber);
         int expectedPos = posInWindow(expectedNumber);
         if (numberPos < expectedPos) {
@@ -58,13 +79,7 @@ public class WindowedReceiver implements Receiver {
         } else if (numberPos < windowLength) {
             // NAK any missed packets
             while (expectedNumber != packetNumber) {
-                PacketContent nak;
-                if (goBackN) {
-                    nak = new NakBackNContent(expectedNumber);
-                } else {
-                    nak = new NakSelectContent(expectedNumber);
-                }
-                parent.bufferPacket(nak);
+                parent.bufferPacket(new NakSelectContent(expectedNumber));
                 expectedNumber = nextNumber(expectedNumber);
             }
             window.set(numberPos, content);
@@ -76,7 +91,7 @@ public class WindowedReceiver implements Receiver {
         }
         return numberPos < windowLength;
     }
-        
+    
     private int cyclicShift(int number, int shift, int modulo) {
         int n = (number + shift) % modulo;
         return n < 0 ? n + modulo : n;

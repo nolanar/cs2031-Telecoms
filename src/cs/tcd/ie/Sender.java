@@ -8,9 +8,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 
 /**
  * A buffered packet sender which does not correct for packet loss.
@@ -23,31 +20,16 @@ public class Sender {
 
     private final LinkedBlockingQueue<DatagramPacket> sendBuffer;
     private final ExecutorService executor;
-    private boolean started;
     
     public Sender(Node parent, SocketAddress dstAddress) {
         this.parent = parent;
         this.dstAddress = dstAddress;
         sendBuffer = new LinkedBlockingQueue<>();
-        started = false;
+
         executor = Executors.newSingleThreadExecutor();
-        
-        this.start();
+        executor.execute(() -> sender());
     }
     
-    /**
-     * Begin the sender worker thread.
-     * 
-     * Tries to take a packet from the buffer to pass to the parent node to
-     * be sent.
-     */
-    private void start() {
-        if (!started) {
-            started = true;
-            executor.execute(() -> sender());
-        }
-    }
-
     /**
      * Add packet to buffer to be sent.
      * 

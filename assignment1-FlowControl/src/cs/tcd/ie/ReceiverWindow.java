@@ -1,16 +1,14 @@
 package cs.tcd.ie;
 
-import java.net.DatagramPacket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- *
+ * A receiver packet window which corrects for packet loss.
+ * 
  * @author aran
  */
-public class ReceiverWindow {
-    private final Server parent;
+public abstract class ReceiverWindow {
     
     private boolean goBackN;
     
@@ -24,8 +22,7 @@ public class ReceiverWindow {
     private int windowStart;
     private int expectedNumber;
     
-    public ReceiverWindow(Server parent, int windowLength, int sequenceLength, boolean goBackN) {
-        this.parent = parent;
+    public ReceiverWindow(int windowLength, int sequenceLength, boolean goBackN) {
                 
         this.sequenceLength = sequenceLength;
         this.windowLength = windowLength;
@@ -38,54 +35,78 @@ public class ReceiverWindow {
         
         executor = Executors.newSingleThreadExecutor();
         started = false;
+        
+        this.start();
     }
+
+    /**
+     * Send the specified packet.
+     * 
+     * Implement this method to handle packets that need to be sent.
+     * 
+     * @param packet to be sent
+     */    
+    public abstract void sendPacket(PacketContent packet);
     
-    public synchronized boolean receive(DatagramPacket packet) {
-        PacketContent content = PacketContent.fromDatagramPacket(packet);
+    /**
+     * Output the specified packet.
+     * 
+     * Implement this method to handle packets that are ready for use.
+     * 
+     * @param packet output packet
+     */
+    public abstract void outputPacket(PacketContent packet);
+    
+    /**
+     * Action to take upon receiving a packet.
+     * 
+     * @param packet received packet
+     */
+    public synchronized boolean receive(PacketContent packet) {
         
         boolean result;
         if (goBackN) { 
-            result = receiveGoBackN(content);
+            result = receiveGoBackN(packet);
         } else {
-            result = receiveSelectiveRepeat(content);            
+            result = receiveSelectiveRepeat(packet);            
         }
         return result;
     }
     
-    private boolean receiveGoBackN(PacketContent content) {
-        int packetNumber = content.getPacketNumber();
+    private boolean receiveGoBackN(PacketContent packet) {
+        int packetNumber = packet.getPacketNumber();
         boolean gotExpected = packetNumber == expectedNumber;
         if (gotExpected) {
-            window.set(0, content);
+            window.set(0, packet);
             expectedNumber = nextNumber(expectedNumber);            
         } else {
-            parent.bufferPacket(new NakBackNContent(expectedNumber));
-            parent.bufferPacket(new AckPacketContent(expectedNumber));
+            sendPacket(new NakBackNContent(expectedNumber));
+            sendPacket(new AckPacketContent(expectedNumber));
         }
         return gotExpected;
     }
     
-    private boolean receiveSelectiveRepeat(PacketContent content) {
-        int packetNumber = content.getPacketNumber();
+    private boolean receiveSelectiveRepeat(PacketContent packet) {
+        int packetNumber = packet.getPacketNumber();
         int numberPos = posInWindow(packetNumber);
         int expectedPos = posInWindow(expectedNumber);
         if (numberPos < expectedPos) {
-            window.set(numberPos, content);
+            window.set(numberPos, packet);
         } else if (numberPos == expectedPos) {
-            window.set(numberPos, content);
+            window.set(numberPos, packet);
             expectedNumber = nextNumber(expectedNumber);            
         } else if (numberPos < windowLength) {
             // NAK any missed packets
             while (expectedNumber != packetNumber) {
-                parent.bufferPacket(new NakSelectContent(expectedNumber));
+                sendPacket(new NakSelectContent(expectedNumber));
                 expectedNumber = nextNumber(expectedNumber);
             }
-            window.set(numberPos, content);
+            window.set(numberPos, packet);
             expectedNumber = nextNumber(expectedNumber);
         } else {
             // ACK packet that should be received next
             PacketContent ack = new AckPacketContent(windowStart);
-            parent.bufferPacket(ack);
+            sendPacket(ack);
         }
         return numberPos < windowLength;
     }
@@ -99,7 +120,7 @@ public class ReceiverWindow {
         return cyclicShift(number, -windowStart, sequenceLength);
     }      
     
-    public void start() {
+    private void start() {
         if (!started) {
             started = true;
             executor.execute(() -> windowToBuffer());
@@ -124,16 +145,14 @@ public class ReceiverWindow {
     
     private synchronized void ackAll() throws InterruptedException {
         int size = window.size();
-        System.err.println(parent.receiver.size());
         // Move from window into buffer
         for (int i = 0; i < size; i++) {
             PacketContent content = window.remove();
             windowStart = nextNumber(windowStart);
-            parent.receiver.put(content);
+            outputPacket(content);
         }
-        parent.packetReady();
         PacketContent ack = new AckPacketContent(windowStart);
-        parent.bufferPacket(ack);
+        sendPacket(ack);
     }  
 
 }

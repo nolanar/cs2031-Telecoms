@@ -31,6 +31,8 @@ public class Sender {
         sendBuffer = new LinkedBlockingQueue<>();
         started = false;
         executor = Executors.newSingleThreadExecutor();
+        
+        this.start();
     }
     
     /**
@@ -39,7 +41,7 @@ public class Sender {
      * Tries to take a packet from the buffer to pass to the parent node to
      * be sent.
      */
-    public void start() {
+    private void start() {
         if (!started) {
             started = true;
             executor.execute(() -> sender());

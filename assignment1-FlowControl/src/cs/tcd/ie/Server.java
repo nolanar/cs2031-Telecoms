@@ -21,10 +21,22 @@ public class Server extends Node {
         catch(java.lang.Exception e) {e.printStackTrace();}
         this.terminal= terminal;
         SocketAddress srcAddress = new InetSocketAddress(srcHost, srcPort);
-        sender = new Sender(this, srcAddress);
-        sender.start();
-        window = new ReceiverWindow(this, windowSize, sequenceLength, goBackN);
-        window.start();
+        
+        sender = new Sender(this, srcAddress);        
+        window = new ReceiverWindow(windowSize, sequenceLength, goBackN) {
+
+            @Override
+            public void sendPacket(PacketContent packet) {
+                sender.add(packet);
+            }
+
+            @Override
+            public void outputPacket(PacketContent packet) {
+                printPacketContent(packet);
+            }
+            
+        };
+        
         receiver = new LinkedBlockingQueue<>();
         listener.go();
     }
@@ -32,38 +44,24 @@ public class Server extends Node {
     @Override
     public void onReceipt(DatagramPacket packet) {
         try {
-            window.receive(packet);
+            PacketContent content = PacketContent.fromDatagramPacket(packet);
+            window.receive(content);
         }
         catch(Exception e) {e.printStackTrace();}
     }
+    
+    private void printPacketContent(PacketContent packet) {
 
-    /**
-     * Action to take upon packets entering the received buffer.
-     * 
-     */
-    @Override
-    public void packetReady() {
-        while (!receiver.isEmpty()) {
-            PacketContent content = receiver.remove();
-            
-            switch (content.getType()) { 
+        switch (packet.getType()) { 
             case PacketContent.FILEINFO:
-                terminal.println("File name: " + ((FileInfoContent)content).getFileName());
-                terminal.println("File size: " + ((FileInfoContent)content).getFileSize());
+                terminal.println("File name: " + ((FileInfoContent)packet).getFileName());
+                terminal.println("File size: " + ((FileInfoContent)packet).getFileSize());
                 break;
             case PacketContent.STRINGPACKET:
-                terminal.println(content.toString());
+                terminal.println(packet.toString());
                 break;
-            }
         }
-    }
-
-    /**
-     * The server passively waits for packets.
-     */
-    @Override
-    public PacketContent getPacket() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        
     }
     
     public synchronized void start() throws Exception {

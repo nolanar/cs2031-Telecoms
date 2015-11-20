@@ -5,12 +5,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * A buffered packet sender which corrects for packet loss.
+ * A sender packet window which corrects for packet loss.
  * 
  * @author aran
  */
-public class SenderWindow {
-    private final Node parent;
+public abstract class SenderWindow {
     
     // window components:
     private final ArrayBlockingList<ScheduledPacket> windowPackets;
@@ -25,8 +24,7 @@ public class SenderWindow {
     private int bufferNumber;
     private int windowStart;
     
-    public SenderWindow(Client parent, int windowLength, int sequenceLength) {
-        this.parent = parent;
+    public SenderWindow(int windowLength, int sequenceLength) {
                 
         this.sequenceLength = sequenceLength;
         this.windowLength = windowLength;
@@ -38,12 +36,14 @@ public class SenderWindow {
         
         pool = Executors.newFixedThreadPool(THREAD_COUNT);
         started = false;
+        
+        this.start();
     }
-
+    
     /**
      * Starts the SenderWindow
      */
-    public void start() {
+    private void start() {
         if (!started) {
             started = true;
             pool.execute(() -> inputToWindow());
@@ -51,6 +51,24 @@ public class SenderWindow {
         }
     }
 
+    /**
+     * Get a packet.
+     * 
+     * Implement this method to be used as packet input into window.
+     * This must be a blocking method.
+     * 
+     * @return packet taken from input
+     */
+    public abstract PacketContent getPacket();
+    
+    /**
+     * Send the specified packet.
+     * 
+     * Implement this method to handle output packets from the window.
+     * 
+     * @param packet to be sent
+     */
+    public abstract void sendPacket(PacketContent packet);    
     
     /**
      * Get packet from the input put it into the window.
@@ -63,7 +81,7 @@ public class SenderWindow {
         while (true) {
             try {
                 windowPackets.awaitNotFull();                // Blocking
-                PacketContent packet = parent.getPacket();  // Blocking
+                PacketContent packet = getPacket();  // Blocking
                 packet.number = bufferNumber;
                 bufferNumber = nextNumber(bufferNumber);
                 ScheduledPacket schPacket = new ScheduledPacket(packet);
@@ -89,7 +107,7 @@ public class SenderWindow {
             try {
                 // Wait for next packet to expire
                 ScheduledPacket schPacket = windowTimers.take(); // Blocking
-                parent.bufferPacket(schPacket.getPacket());
+                sendPacket(schPacket.getPacket());
                 // renew the delay on the packet and feed back into schedule
                 windowTimers.put(schPacket.repeat());
             } catch (InterruptedException e) {

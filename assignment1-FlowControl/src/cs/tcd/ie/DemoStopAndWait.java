@@ -1,12 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package cs.tcd.ie;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -26,10 +18,7 @@ public class DemoStopAndWait {
         Terminal clientTerm =  new Terminal("Client");
         Terminal serverTerm =  new Terminal("Server");
         
-        Client client = new Client(clientTerm, DEMO_HOST, DEMO_CLIENT_PORT,
-                DEMO_SERVER_PORT, 1, 2, false);
-        Server server = new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT,
-                DEMO_SERVER_PORT, 1, 2, false);
-        
+        new Client(clientTerm, DEMO_HOST, DEMO_CLIENT_PORT, DEMO_SERVER_PORT, 1, 2, false);
+        new Server(serverTerm, DEMO_HOST, DEMO_CLIENT_PORT, DEMO_SERVER_PORT, 1, 2, false);
     }
 }

@@ -39,31 +39,6 @@ public abstract class Node {
       * @param packet - Stores received packet
       */
     public abstract void onReceipt(DatagramPacket packet);
-
-
-    /**
-     * Action to take upon packets entering the received buffer.
-     * 
-     */
-    public abstract void packetReady();
-    
-    /**
-     * Puts the packet in the send buffer to await being sent.
-     * 
-     * @param content
-     */    
-    public void bufferPacket(PacketContent content) {
-        sender.add(content);
-    }  
-    
-    /**
-     * Attempts to get an input packet.
-     * 
-     * This must be a blocking method.
-     * 
-     * @return the next input packet
-     */
-    public abstract PacketContent getPacket();
     
     /**
      * Sends the packet immediately.

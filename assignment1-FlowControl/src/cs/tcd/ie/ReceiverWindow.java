@@ -15,7 +15,6 @@ public abstract class ReceiverWindow {
     private final ArrayBlockingList<PacketContent> window;
     
     private final ExecutorService executor;
-    private boolean started;
     
     private final int sequenceLength;
     private final int windowLength;
@@ -34,9 +33,7 @@ public abstract class ReceiverWindow {
         window = new ArrayBlockingList<>(windowLength);
         
         executor = Executors.newSingleThreadExecutor();
-        started = false;
-        
-        this.start();
+        executor.execute(() -> windowToBuffer());
     }
 
     /**
@@ -120,12 +117,6 @@ public abstract class ReceiverWindow {
         return cyclicShift(number, -windowStart, sequenceLength);
     }      
     
-    private void start() {
-        if (!started) {
-            started = true;
-            executor.execute(() -> windowToBuffer());
-        }
-    }
     
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;

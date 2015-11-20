@@ -4,7 +4,10 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Client class.
@@ -12,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * An instance accepts user input 
  */
 public class Client extends Node {
-    SenderWindow window;
+    private final SenderWindow window;
     
     /**
      * Constructor
@@ -21,12 +24,15 @@ public class Client extends Node {
      */
     Client(Terminal terminal, String dstHost, int port, int dstPort,
             int windowSize, int sequenceLength, boolean goBackN) {
+            
+        this.terminal = terminal;
+        
         try {
             socket = new DatagramSocket(port);
-        } catch(java.lang.Exception e) {e.printStackTrace();}
-        this.terminal = terminal;
+        } catch (SocketException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
         SocketAddress dstAddress = new InetSocketAddress(dstHost, dstPort);
-        
         sender = new Sender(this, dstAddress);
         receiver = new LinkedBlockingQueue<>();
         window = new SenderWindow(windowSize, sequenceLength) {

@@ -15,9 +15,7 @@ public abstract class SenderWindow {
     private final ArrayBlockingList<ScheduledPacket> windowPackets;
     private final DelayQueue<ScheduledPacket> windowTimers;
     
-    private static final int THREAD_COUNT = 2;
     private final ExecutorService pool;
-    private boolean started;
     
     private final int sequenceLength;
     private final int windowLength;
@@ -34,21 +32,9 @@ public abstract class SenderWindow {
         windowPackets = new ArrayBlockingList<>(windowLength);
         windowTimers = new DelayQueue<>();
         
-        pool = Executors.newFixedThreadPool(THREAD_COUNT);
-        started = false;
-        
-        this.start();
-    }
-    
-    /**
-     * Starts the SenderWindow
-     */
-    private void start() {
-        if (!started) {
-            started = true;
-            pool.execute(() -> inputToWindow());
-            pool.execute(() -> windowWorker());
-        }
+        pool = Executors.newFixedThreadPool(2);
+        pool.execute(() -> inputToWindow());
+        pool.execute(() -> windowWorker());
     }
 
     /**

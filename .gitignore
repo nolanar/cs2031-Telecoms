@@ -1,3 +1,7 @@
+
+# exceptions #
+!DragonConsolev3.jar
+
 *.class
 
 # Mobile Tools for Java (J2ME)
@@ -13,10 +17,6 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-/assignment1-FlowControl/nbproject/private/
-/assignment1-FlowControl/build/
-/assignment1-FlowControl/dist/
-
-# exceptions #
-!DragonConsolev3.jar
-/flow-control/nbproject/private/
+/nbproject/private/
+/build/
+/dist/

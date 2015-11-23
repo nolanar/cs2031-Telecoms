@@ -50,4 +50,4 @@ This must be a blocking method that gets packets. For example: Used in the `Clie
 ##### `sendPacket()`
 This method should be used to send the specified packet to it's destination. For example: Put the packet in a buffer that will send the packet at the appropriate time.
 ##### `outputPacket()`
-This method should be used to handle the packets that have been successfully received in the correct order. For example, used in the `Server` class to print to its `Terminal` the message that was sent by the `Client`.
+This method should be used to handle the packets that have been successfully received in the correct order. For example, used in the `Server` class to print to its `Terminal` messages sent by the `Client`.

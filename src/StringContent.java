@@ -1,4 +1,4 @@
-package cs.tcd.ie;
+
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,7 +9,7 @@ import java.io.ObjectOutputStream;
  */
 public class StringContent extends PacketContent {
 
-    String message;
+    private String message;
 
     /**
      * Constructor that takes in information about a file.
@@ -27,19 +27,18 @@ public class StringContent extends PacketContent {
      * @param size Size of filename.
      */
     StringContent(int number, String message) {
-        this.number = number;
+        setNumber(number);
         type= STRINGPACKET;
         this.message = message;
     }
 
     /**
      * Constructs an object out of a datagram packet.
-     * @param packet Packet that contains information about a file.
      */
     protected StringContent(ObjectInputStream oin) {
         try {
             type= STRINGPACKET;
-            number = oin.readInt();
+            setNumber(oin.readInt());
             message= oin.readUTF();
         } 
         catch(Exception e) {e.printStackTrace();}

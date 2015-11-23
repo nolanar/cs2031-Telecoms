@@ -1,4 +1,4 @@
-package cs.tcd.ie;
+
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -58,7 +58,7 @@ public abstract class Node {
         }
         if (debugMode) {
             PacketContent content = PacketContent.fromDatagramPacket(packet);
-            terminal.printSys("Sending " + content.getPacketNumber() + ": " + content);
+            terminal.printSys("Sending " + content.getNumber() + ": " + content);
             if (drop) {
                 terminal.printSys(" ... Dropped!");
             } else {
@@ -95,7 +95,7 @@ public abstract class Node {
                     socket.receive(packet);
                     if (debugMode) {
                         PacketContent content = PacketContent.fromDatagramPacket(packet);
-                        terminal.printSys("Recieved " + content.getPacketNumber() + ": " + content);
+                        terminal.printSys("Recieved " + content.getNumber() + ": " + content);
                     }
                     onReceipt(packet);
                 }

@@ -1,5 +1,3 @@
-package cs.tcd.ie;
-
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
@@ -57,13 +55,13 @@ public class Client extends Node {
         PacketContent content= PacketContent.fromDatagramPacket(packet);
         switch(content.getType()) {
         case PacketContent.ACKPACKET:
-            window.ack(content.number);
+            window.ack(content.getNumber());
             break;
         case PacketContent.NAK_SELECT:
-            window.nak(content.number, false);
+            window.nak(content.getNumber(), false);
             break;
         case PacketContent.NAK_BACK_N:
-            window.nak(content.number, true);
+            window.nak(content.getNumber(), true);
             break;
         }
     }

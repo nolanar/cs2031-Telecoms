@@ -1,6 +1,3 @@
-package cs.tcd.ie;
-
-
 import java.net.DatagramPacket;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +24,7 @@ public abstract class PacketContent {
     public static final byte FILEINFO = 0x21;
 
     byte type;
-    int number = -1; // Invalid index by default
+    private int number = -1; // Invalid index by default
     
 
     /**
@@ -126,6 +123,7 @@ public abstract class PacketContent {
      * 
      * @return Returns the content of the packet as String.
      */
+    @Override
     public abstract String toString();
 
     /**
@@ -137,13 +135,11 @@ public abstract class PacketContent {
         return type;
     }
     
-    /**
-     * Returns the number of the packet
-     * 
-     * @return Returns the number of the packet.
-     */
-    public int getPacketNumber() {
+    public int getNumber() {
         return number;
     }
 
+    public void setNumber(int number) {
+        this.number = number;
+    }
 }

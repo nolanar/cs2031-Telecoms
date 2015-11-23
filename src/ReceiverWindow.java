@@ -1,5 +1,3 @@
-package cs.tcd.ie;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -10,7 +8,7 @@ import java.util.concurrent.Executors;
  */
 public abstract class ReceiverWindow {
     
-    private boolean goBackN;
+    private final boolean goBackN;
     
     private final ArrayBlockingList<PacketContent> window;
     
@@ -33,9 +31,33 @@ public abstract class ReceiverWindow {
         window = new ArrayBlockingList<>(windowLength);
         
         executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> windowToBuffer());
+        executor.execute(() -> windowToOutput());
     }
 
+    /**
+     * Action taken by worker thread.
+     * 
+     * Moves packets from the window to the output.
+     */
+    private void windowToOutput() {
+        while (true) {
+            try {
+                window.awaitNotEmpty();
+                int size = window.size();
+                for (int i = 0; i < size; i++) {
+                    PacketContent content = window.remove();
+                    windowStart = nextNumber(windowStart);
+                    outputPacket(content);
+                }
+                PacketContent ack = new AckPacketContent(windowStart);
+                sendPacket(ack);
+            } catch (InterruptedException ex) {
+                System.out.println("Terminating receiver feeder");
+                return;
+            }
+        }
+    }
+    
     /**
      * Send the specified packet.
      * 
@@ -48,7 +70,7 @@ public abstract class ReceiverWindow {
     /**
      * Output the specified packet.
      * 
-     * Implement this method to handle packets that are ready for use.
+     * Implement this to take output packets that are ready for use.
      * 
      * @param packet output packet
      */
@@ -60,18 +82,16 @@ public abstract class ReceiverWindow {
      * @param packet received packet
      */
     public synchronized boolean receive(PacketContent packet) {
-        
-        boolean result;
-        if (goBackN) { 
-            result = receiveGoBackN(packet);
-        } else {
-            result = receiveSelectiveRepeat(packet);            
-        }
-        return result;
+        return goBackN ? goBackN(packet) : selectiveRepeat(packet);
     }
     
-    private boolean receiveGoBackN(PacketContent packet) {
-        int packetNumber = packet.getPacketNumber();
+    /**
+     * Action to take upon receiving a go-back-n packet.
+     * 
+     * @param packet received packet
+     */
+    private boolean goBackN(PacketContent packet) {
+        int packetNumber = packet.getNumber();
         boolean gotExpected = packetNumber == expectedNumber;
         if (gotExpected) {
             window.set(0, packet);
@@ -83,8 +103,13 @@ public abstract class ReceiverWindow {
         return gotExpected;
     }
     
-    private boolean receiveSelectiveRepeat(PacketContent packet) {
-        int packetNumber = packet.getPacketNumber();
+    /**
+     * Action to take upon receiving a selective repeat packet.
+     * 
+     * @param packet received packet
+     */
+    private boolean selectiveRepeat(PacketContent packet) {
+        int packetNumber = packet.getNumber();
         int numberPos = posInWindow(packetNumber);
         int expectedPos = posInWindow(expectedNumber);
         if (numberPos < expectedPos) {
@@ -121,29 +146,4 @@ public abstract class ReceiverWindow {
     public int nextNumber(int number) {
         return (number + 1) % sequenceLength;
     }
-    
-    private void windowToBuffer() {
-        while (true) {
-            try {
-                window.awaitNotEmpty();
-                ackAll();
-            } catch (InterruptedException ex) {
-                System.out.println("Terminating receiver feeder");
-                return;
-            }
-        }
-    }
-    
-    private synchronized void ackAll() throws InterruptedException {
-        int size = window.size();
-        // Move from window into buffer
-        for (int i = 0; i < size; i++) {
-            PacketContent content = window.remove();
-            windowStart = nextNumber(windowStart);
-            outputPacket(content);
-        }
-        PacketContent ack = new AckPacketContent(windowStart);
-        sendPacket(ack);
-    }  
-
 }

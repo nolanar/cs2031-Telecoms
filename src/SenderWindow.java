@@ -1,5 +1,3 @@
-package cs.tcd.ie;
-
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,7 +66,7 @@ public abstract class SenderWindow {
             try {
                 windowPackets.awaitNotFull();                // Blocking
                 PacketContent packet = getPacket();  // Blocking
-                packet.number = bufferNumber;
+                packet.setNumber(bufferNumber);
                 bufferNumber = nextNumber(bufferNumber);
                 ScheduledPacket schPacket = new ScheduledPacket(packet);
                 //Add packet to both of the window components:

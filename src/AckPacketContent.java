@@ -1,4 +1,4 @@
-package cs.tcd.ie;
+
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -17,7 +17,7 @@ public class AckPacketContent extends PacketContent {
      */
     AckPacketContent(int number) {
         type= ACKPACKET;
-        this.number = number;
+        setNumber(number);
     }
 
     /**
@@ -27,7 +27,7 @@ public class AckPacketContent extends PacketContent {
      */
     AckPacketContent(int number, String info) {
         type= ACKPACKET;
-        this.number = number;
+        setNumber(number);
     }
 
     /**
@@ -37,7 +37,7 @@ public class AckPacketContent extends PacketContent {
     protected AckPacketContent(ObjectInputStream oin) {
         try {
             type= ACKPACKET;
-            number = oin.readInt();
+            setNumber(oin.readInt());
         } 
         catch(Exception e) {e.printStackTrace();}
     }
@@ -63,6 +63,6 @@ public class AckPacketContent extends PacketContent {
      */
     @Override
     public String toString() {
-        return "ACK" + number;
+        return "ACK" + getNumber();
     }
 }

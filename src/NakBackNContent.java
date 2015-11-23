@@ -1,4 +1,4 @@
-package cs.tcd.ie;
+
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,7 +16,7 @@ public class NakBackNContent extends PacketContent {
      */
     NakBackNContent(int number) {
         type= NAK_BACK_N;
-        this.number = number;
+        setNumber(number);
     }    
     
     /**
@@ -26,7 +26,7 @@ public class NakBackNContent extends PacketContent {
      */
     NakBackNContent(int number, String info) {
         type= NAK_BACK_N;
-        this.number = number;
+        setNumber(number);
     }
 
     /**
@@ -36,7 +36,7 @@ public class NakBackNContent extends PacketContent {
     protected NakBackNContent(ObjectInputStream oin) {
         try {
             type= NAK_BACK_N;
-            number = oin.readInt();
+            setNumber(oin.readInt());
         } 
         catch(Exception e) {e.printStackTrace();}
     }
@@ -49,7 +49,7 @@ public class NakBackNContent extends PacketContent {
     @Override
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
-            oout.writeInt(number);
+            oout.writeInt(getNumber());
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -63,6 +63,6 @@ public class NakBackNContent extends PacketContent {
      */
     @Override
     public String toString() {
-        return "NAK" + number + " -- Go Back N";
+        return "NAK" + getNumber() + " -- Go Back N";
     }
 }

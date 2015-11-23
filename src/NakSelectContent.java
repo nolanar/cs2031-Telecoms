@@ -1,4 +1,4 @@
-package cs.tcd.ie;
+
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,7 +16,7 @@ public class NakSelectContent extends PacketContent {
      */
     NakSelectContent(int number) {
         type= NAK_SELECT;
-        this.number = number;
+        setNumber(number);
     }    
     
     /**
@@ -26,7 +26,7 @@ public class NakSelectContent extends PacketContent {
      */
     NakSelectContent(int number, String info) {
         type= NAK_SELECT;
-        this.number = number;
+        setNumber(number);
     }
 
     /**
@@ -36,7 +36,7 @@ public class NakSelectContent extends PacketContent {
     protected NakSelectContent(ObjectInputStream oin) {
         try {
             type= NAK_SELECT;
-            number = oin.readInt();
+            setNumber(oin.readInt());
         } 
         catch(Exception e) {e.printStackTrace();}
     }
@@ -49,7 +49,7 @@ public class NakSelectContent extends PacketContent {
     @Override
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
-            oout.writeInt(number);
+            oout.writeInt(getNumber());
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -63,6 +63,6 @@ public class NakSelectContent extends PacketContent {
      */
     @Override
     public String toString() {
-        return "NAK" + number + " -- Selective";
+        return "NAK" + getNumber() + " -- Selective";
     }
 }

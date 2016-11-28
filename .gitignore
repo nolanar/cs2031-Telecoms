@@ -25,3 +25,9 @@ build/
 dist/
 build.xml
 manifest.mf
+
+# IntelliJ specific #
+out/
+telecommunication-flow-control.iml
+.idea/
+
